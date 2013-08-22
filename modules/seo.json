@@ -30,5 +30,15 @@
             "type": "FieldtypeFieldsetClose",
             "label": "Close SEO"
         }
+    ],
+    "templates": [
+        {
+            "name": "home",
+            "fields": ["seo_tab", "seo_meta_description", "seo_close_tab"]
+        },
+        {
+            "name": "basic-page",
+            "fields": ["seo_tab", "seo_meta_description", "seo_close_tab"]
+        }
     ]
 }
