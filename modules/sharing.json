@@ -22,7 +22,13 @@
         {
             "name": "description",
             "type": "FieldtypeTextarea",
-            "label": "Description"
+            "label": "Description",
+            "attributes": [
+                {
+                    "name": "maxchars",
+                    "value": 270
+                }
+            ]
         },
         {
             "name": "image",
@@ -34,6 +40,16 @@
             "name": "close_tab",
             "type": "FieldtypeFieldsetClose",
             "label": "Close SEO"
+        }
+    ],
+    "templates": [
+        {
+            "name": "home",
+            "fields": ["sharing_tab", "sharing_title", "sharing_description", "sharing_image", "sharing_close_tab"]
+        },
+        {
+            "name": "basic-page",
+            "fields": ["sharing_tab", "sharing_title", "sharing_description", "sharing_image", "sharing_close_tab"]
         }
     ]
 }
