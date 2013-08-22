@@ -1,0 +1,34 @@
+{
+    "name": "SEO",
+    "description": "Fields for SEO (meta description, …)",
+    "prefix": "seo",
+    "dependencies": [
+        {
+            "name": "TextareaCounter",
+            "github": "https://github.com/boundaryfunctions/TextareaCounter.git"
+        }
+    ],
+    "fields": [
+        {
+            "name": "tab",
+            "type": "FieldtypeFieldsetTabOpen",
+            "label": "Open SEO"
+        },
+        {
+            "name": "meta_description",
+            "type": "FieldtypeTextarea",
+            "label": "Meta Description",
+            "attributes": [
+                {
+                    "name": "maxchars",
+                    "value": 160
+                }
+            ]
+        },
+        {
+            "name": "close_tab",
+            "type": "FieldtypeFieldsetClose",
+            "label": "Close SEO"
+        }
+    ]
+}

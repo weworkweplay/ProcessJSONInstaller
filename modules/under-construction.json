@@ -1,0 +1,47 @@
+{
+    "name": "Under construction",
+    "description": "Adds a switch to show 'Under Construction' to visitors",
+    "prefix": "uc",
+    "dependencies": [],
+    "fields": [
+        {
+            "name": "switch",
+            "type": "FieldtypeCheckbox",
+            "label": "Website live switch",
+            "description": "This is a switch that can take down the whole site. Handle with care!"
+        },
+        {
+            "name": "background_color",
+            "type": "FieldtypeText",
+            "label": "Background color (HEX - no #)"
+        },
+        {
+            "name": "image",
+            "type": "FieldtypeImage",
+            "label": "Centered image",
+            "description": "The image will be resized to 900x500 (450x250 on regular screens)"
+        }
+    ],
+    "templates": [
+        {
+            "name": "page_underconstruction",
+            "label": "Template used for the temporary 'Under Construction' page",
+            "fields":
+                ["title", "headline", "uc_background_color", "uc_image"]
+        }
+    ],
+    "pages": [
+        {
+            "name": "under-construction",
+            "template": "page_underconstruction",
+            "parent": "config",
+            "defaults": [
+                {
+                    "field": "title",
+                    "value": "Under Construction"
+                }
+            ]
+
+        }
+    ]
+}

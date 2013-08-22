@@ -1,0 +1,19 @@
+/**
+ * This optional CSS file is only loaded when the ProcessHello module is run
+ *
+ * Remove it if you have no CSS styles to add. 
+ *
+ */
+
+.content ul.wwwp-installer-list {
+	list-style: disc;
+	padding-left: 1em;
+	margin-left: 1em;
+	border-left: 2px solid #ccc;
+	margin-bottom: 2em;
+}
+
+.content ul.wwwp-installer-list li {
+	margin: 0;
+	list-style: disc;
+}

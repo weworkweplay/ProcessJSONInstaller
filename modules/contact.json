@@ -1,0 +1,56 @@
+{
+    "name": "Contact",
+    "description": "Creates a contact form that allows users to easily email you",
+    "prefix": "contact",
+    "dependencies": [
+        {
+            "name": "FormTemplateProcessor",
+            "github": "https://github.com/ryancramerdesign/FormTemplateProcessor.git",
+            "core": false
+        }
+    ],
+    "fields": [
+        {
+            "name": "name",
+            "type": "FieldtypeText",
+            "label": "User name"
+        },
+        {
+            "name": "email",
+            "type": "FieldtypeEmail",
+            "label": "User email"
+        },
+        {
+            "name": "message",
+            "type": "FieldtypeTextarea",
+            "label": "Contact message"
+        },
+        {
+            "name": "recipient_email",
+            "type": "FieldtypeEmail",
+            "label": "Email to send contact form entries to"
+        },
+        {
+            "name": "recipients",
+            "type": "FieldtypeRepeater",
+            "label": "People that will receive contact form entries",
+            "description": "Messages sent from the contact form will be stored as children of the contact page but also sent to these email adresses."
+        }
+    ],
+    "templates": [
+        {
+            "name": "contact_entry",
+            "label": "Contact form entries",
+            "fields": [
+                "title", "contact_name", "contact_email", "contact_message"
+            ]
+        },
+        {
+            "name": "config",
+            "label": "Configuration",
+            "fields": [
+                "contact_recipients"
+            ]
+        }
+    ]
+}

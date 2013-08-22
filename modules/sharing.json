@@ -1,0 +1,39 @@
+{
+    "name": "Sharing",
+    "description": "Fields for better links on social media",
+    "prefix": "sharing",
+    "dependencies": [
+        {
+            "name": "TextareaCounter",
+            "github": "https://github.com/boundaryfunctions/TextareaCounter.git"
+        }
+    ],
+    "fields": [
+        {
+            "name": "tab",
+            "type": "FieldtypeFieldsetTabOpen",
+            "label": "Sharing"
+        },
+        {
+            "name": "title",
+            "type": "FieldtypeText",
+            "label": "Title"
+        },
+        {
+            "name": "description",
+            "type": "FieldtypeTextarea",
+            "label": "Description"
+        },
+        {
+            "name": "image",
+            "type": "FieldtypeImage",
+            "label": "Image",
+            "description": "Has to be square, image will be embedded by Facebook"
+        },
+        {
+            "name": "close_tab",
+            "type": "FieldtypeFieldsetClose",
+            "label": "Close SEO"
+        }
+    ]
+}
