@@ -111,7 +111,7 @@ class Module
     {
         foreach ($this->fieldsJSON as $fieldJSON) {
             $name = (!empty($this->prefix)) ? $this->prefix . '_' . $fieldJSON->name : $fieldJSON->name;
-            $label = (!empty($fieldJSON->label)) ? $fieldJSON->label : ucfirst($fieldJSON->name);
+            $label = (!empty($fieldJSON->label)) ? $fieldJSON->label : '';
             $description = (!empty($fieldJSON->description)) ? $fieldJSON->description : '';
             $attributes = (!empty($fieldJSON->attributes)) ? $fieldJSON->attributes : array();
 

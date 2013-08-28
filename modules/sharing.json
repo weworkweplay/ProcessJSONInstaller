@@ -39,7 +39,7 @@
         {
             "name": "close_tab",
             "type": "FieldtypeFieldsetClose",
-            "label": "Close SEO"
+            "label": ""
         }
     ],
     "templates": [
