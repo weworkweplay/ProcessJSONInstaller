@@ -132,18 +132,23 @@ class ProcessWWWPInstaller extends Process {
     }
 
     protected function addFolderToZip ($dir, $zip) {
-        if ($dh = opendir($dir)) {
-            $zip->addEmptyDir($dir);
+        $actualDir = $dir;
+        $dirName = substr($dir, strpos($dir, '/site/') + 1);
+
+        if ($dh = opendir($actualDir)) {
+            $zip->addEmptyDir($dirName);
             
             while (($file = readdir($dh)) !== false) {
                 if ($file === '.' || $file === '..' || $file === '.DS_Store') continue;
 
-                if(!is_file($dir . '/' . $file)){
-                    $this->addFolderToZip($dir . '/' . $file, $zip);
+                if(!is_file($actualDir . '/' . $file)) {
+                    if ($file !== '.git') {
+                        $this->addFolderToZip($actualDir . '/' . $file, $zip);
+                    }
                     continue;
                 }
 
-                $zip->addFile($dir . '/' . $file);
+                $zip->addFile($dir . '/' . $file, $dirName . '/' . $file);
             }
         }
     }
@@ -180,11 +185,16 @@ class ProcessWWWPInstaller extends Process {
             $this->error('Something went wrong copying your files');
         }
 
+        $filename = $_SERVER['HTTP_REFERER'];
+        $filename = substr($filename, strpos($filename, '//') + 2);
+        $filename = substr($filename, 0, strpos($filename, '/admin/'));
+        $filename = str_replace(array('.', '/'), '-', $filename);
+
         $file = $this->buildZipArchive();
 
         header("Content-Type: application/zip");
         header("Content-Transfer-Encoding: Binary"); 
-        header("Content-disposition: attachment; filename=\"site-export-" . date('Y-m-d') . ".zip" . "\""); 
+        header("Content-disposition: attachment; filename=\"export-" . $filename . "-" . date('Ymd') . ".zip" . "\""); 
         readfile($file);
     }
 
