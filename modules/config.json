@@ -7,7 +7,7 @@
     "templates": [
         {
             "name": "config",
-            "label": "Template used for the configuration page",
+            "label": "Configuration",
             "fields": [
                 "title"
             ]
@@ -17,6 +17,7 @@
         {
             "name": "config",
             "template": "config",
+            "hidden": true,
             "defaults": [
                 {
                     "field": "title",

@@ -4,6 +4,11 @@ namespace WWWP;
 
 require_once 'Dependency.php';
 
+use \Field;
+use \FieldGroup;
+use \Template;
+use \Page;
+
 class Module
 {
     public $name;
@@ -71,7 +76,7 @@ class Module
             $t = wire('templates')->get($templateJSON->name);
 
             if (!$t) {
-                $t = new \Template();
+                $t = new Template();
                 $t->name = $templateJSON->name;
                 $t->label = $templateJSON->label;
             }
@@ -79,7 +84,7 @@ class Module
             $fg = wire('fieldgroups')->get($templateJSON->name);
 
             if (!$fg) {
-                $fg = new \FieldGroup();
+                $fg = new FieldGroup();
                 $fg->name = $templateJSON->name;
                 $fg->save();
             }
@@ -113,7 +118,7 @@ class Module
             $f = wire('fields')->get($name);
 
             if (!$f) {
-                $f = new \Field();
+                $f = new Field();
                 $f->type = $fieldJSON->type;
                 $f->name = $name;
                 $f->label = $label;
@@ -134,10 +139,19 @@ class Module
             $p = wire('pages')->get('/' . $pageJSON->name . '/');
 
             if (!$p->id) {
-                $p = new \Page();
+                $p = new Page();
                 $p->name = $pageJSON->name;
                 $p->parent = ($pageJSON->parent) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
                 $p->template = $pageJSON->template;
+
+                // If set to true, Page:statusHidden, else, Page::statusOn
+                $hidden = !is_null($pageJSON->hidden) ? ((bool) $pageJSON->hidden ? Page::statusHidden : Page::statusOn) : Page::statusOn;
+
+                // If set to true, Page::statusOn, else Page::statusUnpublished
+                $published = !is_null($pageJSON->published) ? ((bool) $pageJSON->published ? Page::statusOn : Page::statusUnpublished) : Page::statusOn;
+                
+                $p->addStatus($hidden);
+                $p->addStatus($published);
 
                 if ($pageJSON->defaults) {
                     foreach ($pageJSON->defaults as $default) {
@@ -194,7 +208,7 @@ class Module
      * @return void
      * @author Pieter Beulque
      **/
-    public function addToTemplate(\Template $template)
+    public function addToTemplate(Template $template)
     {
         foreach ($this->fields as $field) {
             $template->fields->add($field->name);
