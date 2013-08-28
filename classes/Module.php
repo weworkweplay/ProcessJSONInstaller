@@ -110,10 +110,12 @@ class Module
     protected function prepareFields()
     {
         foreach ($this->fieldsJSON as $fieldJSON) {
-            $name = (!empty($this->prefix)) ? $this->prefix . '_' . $fieldJSON->name : $fieldJSON->name;
+            $name = (!empty($this->prefix) && $fieldJSON->name[0] !== '~') ? $this->prefix . '_' . $fieldJSON->name : $fieldJSON->name;
             $label = (!empty($fieldJSON->label)) ? $fieldJSON->label : '';
             $description = (!empty($fieldJSON->description)) ? $fieldJSON->description : '';
             $attributes = (!empty($fieldJSON->attributes)) ? $fieldJSON->attributes : array();
+
+            $name = ($name[0] === '~') ? substr($name, 1) : $name;
 
             $f = wire('fields')->get($name);
 

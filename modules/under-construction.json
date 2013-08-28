@@ -5,7 +5,7 @@
     "dependencies": [],
     "fields": [
         {
-            "name": "is_live",
+            "name": "~is_live",
             "type": "FieldtypeCheckbox",
             "label": "Website is live?",
             "description": "This is a switch that can take down the whole site. Handle with care!"
@@ -25,13 +25,13 @@
     "templates": [
         {
             "name": "page_underconstruction",
-            "label": "Template used for the temporary 'Under Construction' page",
+            "label": "Under Construction",
             "fields":
                 ["title", "headline", "uc_background_color", "uc_image"]
         },
         {
             "name": "config",
-            "fields": ["uc_is_live"]
+            "fields": ["is_live"]
         }
     ],
     "pages": [
