@@ -12,7 +12,7 @@
         {
             "name": "tab",
             "type": "FieldtypeFieldsetTabOpen",
-            "label": "Open SEO"
+            "label": "SEO"
         },
         {
             "name": "meta_description",
@@ -28,7 +28,7 @@
         {
             "name": "close_tab",
             "type": "FieldtypeFieldsetClose",
-            "label": "Close SEO"
+            "label": ""
         }
     ],
     "templates": [
