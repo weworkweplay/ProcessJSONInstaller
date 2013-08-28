@@ -8,7 +8,13 @@
             "name": "~is_live",
             "type": "FieldtypeCheckbox",
             "label": "Website is live?",
-            "description": "This is a switch that can take down the whole site. Handle with care!"
+            "description": "This is a switch that can take down the whole site. Handle with care!",
+            "attributes": [
+                {
+                    "name": "collapsed",
+                    "value": 1
+                }
+            ]
         },
         {
             "name": "background_color",
@@ -19,7 +25,13 @@
             "name": "image",
             "type": "FieldtypeImage",
             "label": "Centered image",
-            "description": "The image will be resized to 900x500 (450x250 on regular screens)"
+            "description": "The image will be resized to 900x500 (450x250 on regular screens)",
+            "attributes": [
+                {
+                    "name": "maxFiles",
+                    "value": 1
+                }
+            ]
         }
     ],
     "templates": [

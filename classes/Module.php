@@ -138,7 +138,7 @@ class Module
     protected function preparePages()
     {
         foreach ($this->pagesJSON as $pageJSON) {
-            $p = wire('pages')->get('/' . $pageJSON->name . '/');
+            $p = wire('pages')->get('name=' . $pageJSON->name);
 
             if (!$p->id) {
                 $p = new Page();
