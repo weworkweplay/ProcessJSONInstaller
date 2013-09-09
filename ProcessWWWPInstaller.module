@@ -198,18 +198,26 @@ class ProcessWWWPInstaller extends Process {
         readfile($file);
     }
 
+    public function installModule($name) {
+        $module = $this->modules[$name];
+
+        if (empty($module)) {
+            throw new WireException();   
+        }
+
+        $module->install();
+    }
+
     /**
      * Called when the URL is this module's page URL + "/install/?:name/"
      */
     public function ___executeInstall() {
 
-        $module = $this->modules[wire('input')->urlSegment(2)];
-
-        if (empty($module)) {
+        try {
+            $this->installModule(wire('input')->urlSegment(2));
+        } catch (WireException $e) {
             header('Location:' . wire('pages')->get("template=admin, name=" . self::pageName)->url);
         }
-
-        $module->install();
 
         $this->message('Succesfully installed or updated ' . $module->name);
 
@@ -281,6 +289,10 @@ class ProcessWWWPInstaller extends Process {
 
         // tell the user we created this page
         $this->message("Created Page: {$page->path}");
+
+        $this->installModule('config');
+
+        $this->message('Ran config installation script');
     }
 
     /**

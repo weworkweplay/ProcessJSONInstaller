@@ -11,6 +11,13 @@
             "fields": [
                 "title"
             ]
+        },
+        {
+            "name": "empty",
+            "label": "Empty",
+            "fields": [
+                "title"
+            ]
         }
     ],
     "pages": [
