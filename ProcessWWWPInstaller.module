@@ -166,6 +166,8 @@ class ProcessWWWPInstaller extends Process {
         }
 
         $module->install();
+
+        return $module;
     }
 
     /**
@@ -173,7 +175,7 @@ class ProcessWWWPInstaller extends Process {
      */
     public function ___executeInstall() {
         try {
-            $this->installModule(wire('input')->urlSegment(2));
+            $module = $this->installModule(wire('input')->urlSegment(2));
         } catch (WireException $e) {
             header('Location:' . wire('pages')->get("template=admin, name=" . self::pageName)->url);
         }
@@ -190,7 +192,7 @@ class ProcessWWWPInstaller extends Process {
             $output .= '<h2>Created or edited fields</h2><ul class="wwwp-installer-list">';
 
             foreach ($module->fields as $field) {
-                $output .= '<li>' . $field->name . ' - ' . $field->label . '</li>';
+                $output .= '<li><code>' . $field->name . '</code> - ' . $field->label . '</li>';
             }
 
             $output .= '</ul>';
@@ -200,7 +202,7 @@ class ProcessWWWPInstaller extends Process {
             $output .= '<h2>Created or edited templates</h2><ul class="wwwp-installer-list">';
 
             foreach ($module->templates as $template) {
-                $output .= '<li>' . $template->name . ' - ' . $template->label . '</li>';
+                $output .= '<li><code>' . $template->name . '</code> - ' . $template->label . '</li>';
             }
 
             $output .= '</ul>';

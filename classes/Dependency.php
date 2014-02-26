@@ -5,10 +5,10 @@ namespace WWWP;
 class Dependency
 {
     public $name;
-    public $github;
+    public $zip;
     public $core = false;
 
-    private $installDir = '../site/modules/';
+    private $installDir = '../modules/';
 
     public function __construct()
     {
@@ -25,12 +25,16 @@ class Dependency
         }
 
         if (!$core && !file_exists($this->installDir . DIRECTORY_SEPARATOR . $this->name)) {
-            $cwd = getcwd();
-
-            chdir($this->installDir);
-            exec('git clone ' . $this->github, $output);
-
-            chdir($cwd);
+            $zipPath = $this->installDir . $this->name . '.zip';
+            file_put_contents($zipPath, fopen($this->zip, 'r'));
+            $zip = new \ZipArchive;
+            if ($zip->open($zipPath)) {
+                $foldername = $zip->getNameIndex(0);
+                $zip->extractTo($this->installDir);
+                $zip->close();
+                rename($this->installDir . $foldername, $this->installDir . $this->name);
+                unlink($zipPath);
+            }
         }
 
         $modules->resetCache();

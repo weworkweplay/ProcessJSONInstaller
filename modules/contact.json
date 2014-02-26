@@ -5,7 +5,7 @@
     "dependencies": [
         {
             "name": "FormTemplateProcessor",
-            "github": "https://github.com/ryancramerdesign/FormTemplateProcessor.git",
+            "zip": "https://github.com/ryancramerdesign/FormTemplateProcessor/zipball/master",
             "core": false
         }
     ],

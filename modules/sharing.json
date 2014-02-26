@@ -5,7 +5,7 @@
     "dependencies": [
         {
             "name": "TextareaCounter",
-            "github": "https://github.com/boundaryfunctions/TextareaCounter.git"
+            "github": "https://github.com/boundaryfunctions/TextareaCounter/zipball/master"
         }
     ],
     "fields": [

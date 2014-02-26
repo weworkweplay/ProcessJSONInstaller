@@ -56,7 +56,7 @@ class Module
             foreach ($json->dependencies as $dependencyJSON) {
                 $d = new Dependency();
                 $d->name = $dependencyJSON->name;
-                $d->github = ($dependencyJSON->github) ? $dependencyJSON->github : '';
+                $d->zip = ($dependencyJSON->zip) ? $dependencyJSON->zip : '';
                 $d->core = ($dependencyJSON->core) ? (bool) $dependencyJSON->core : false;
 
                 $module->dependencies[] = $d;
@@ -151,7 +151,7 @@ class Module
 
                 // If set to true, Page::statusOn, else Page::statusUnpublished
                 $published = !is_null($pageJSON->published) ? ((bool) $pageJSON->published ? Page::statusOn : Page::statusUnpublished) : Page::statusOn;
-                
+
                 $p->addStatus($hidden);
                 $p->addStatus($published);
 
@@ -186,7 +186,6 @@ class Module
 
         // By first creating the fields, the script allows to specify new fields
         // and use them in a new template in the same JSON file
-
         $this->prepareTemplates();
 
         foreach ($this->templates as $template) {
