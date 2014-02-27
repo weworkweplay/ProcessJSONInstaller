@@ -1,4 +1,4 @@
-.wwwp-installer-list {
+.json-installer-list {
   list-style: disc;
   padding-left: 1em;
   margin-left: 1em;
@@ -6,7 +6,7 @@
   margin-bottom: 2em;
 }
 
-.wwwp-installer-list li {
+.json-installer-list li {
   margin: 0;
   list-style: disc;
 }

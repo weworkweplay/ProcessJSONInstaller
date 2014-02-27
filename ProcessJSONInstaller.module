@@ -4,7 +4,7 @@ require_once 'classes/Dependency.php';
 require_once 'classes/Module.php';
 
 /**
- * WWWP Installer Module
+ * JSON Installer Module
  *
  * A tool for common used setup processes
  *
@@ -18,19 +18,19 @@ require_once 'classes/Module.php';
  *
  */
 
-class ProcessWWWPInstaller extends Process {
+class ProcessJSONInstaller extends Process {
 
     public static function getModuleInfo() {
         return array(
-            'title' => 'We Work We Play Installer',
-            'summary' => 'Configure ProcessWire for common use cases',
+            'title' => 'JSON Installer',
+            'summary' => 'Run JSON files to create fields, templates and pages',
             'version' => 010,
             'author' => 'Pieter Beulque',
             'permission' => 'page-edit',
         );
     }
 
-    const pageName = 'wwwp-installer';
+    const pageName = 'json-installer';
 
     /**
      * Array containing all installable modules
@@ -45,7 +45,7 @@ class ProcessWWWPInstaller extends Process {
         foreach ($tmp as $file) {
             if (strpos($file, '.json') > 0) {
                 $json = json_decode(file_get_contents($dir . DIRECTORY_SEPARATOR . $file));
-                $this->installableModules[substr($file, 0, -5)] = WWWP\Module::createFromJSON($json);
+                $this->installableModules[substr($file, 0, -5)] = JSONInstaller\Module::createFromJSON($json);
             }
         }
     }
@@ -179,12 +179,12 @@ class ProcessWWWPInstaller extends Process {
 
         Wire::setFuel('processHeadline', 'Installing ' . $module->name);
 
-        $this->breadcrumbs->add(new Breadcrumb('../', 'WWWP Installer'));
+        $this->breadcrumbs->add(new Breadcrumb('../', 'JSONInstaller Installer'));
 
         $output = '';
 
         if (!empty($module->fields)) {
-            $output .= '<h2>Created or edited fields</h2><ul class="wwwp-installer-list">';
+            $output .= '<h2>Created or edited fields</h2><ul class="json-installer-list">';
 
             foreach ($module->fields as $field) {
                 $output .= '<li><code>' . $field->name . '</code> - ' . $field->label . '</li>';
@@ -194,7 +194,7 @@ class ProcessWWWPInstaller extends Process {
         }
 
         if (!empty($module->templates)) {
-            $output .= '<h2>Created or edited templates</h2><ul class="wwwp-installer-list">';
+            $output .= '<h2>Created or edited templates</h2><ul class="json-installer-list">';
 
             foreach ($module->templates as $template) {
                 $output .= '<li><code>' . $template->name . '</code> - ' . $template->label . '</li>';
@@ -204,7 +204,7 @@ class ProcessWWWPInstaller extends Process {
         }
 
         if (!empty($module->pages)) {
-            $output .= '<h2>Created or edited pages</h2><ul class="wwwp-installer-list">';
+            $output .= '<h2>Created or edited pages</h2><ul class="json-installer-list">';
 
             foreach ($module->pages as $page) {
                 $output .= '<li>' . $page->name . '</li>';
@@ -222,7 +222,7 @@ class ProcessWWWPInstaller extends Process {
         $page->name = self::pageName;
         $page->parent = $this->pages->get($this->config->adminRootPageID)->child('name=setup');
         $page->process = $this;
-        $page->title = 'WWWP Installer';
+        $page->title = 'JSON Installer';
         $page->save();
 
         $this->message('Created page: ' . $page->path);
@@ -236,7 +236,7 @@ class ProcessWWWPInstaller extends Process {
         $page = $this->pages->get('template=admin,process=' . $moduleID . ',name=' . self::pageName);
 
         if ($page->id) {
-            $this->message("Deleting Page: {$page->path}");
+            $this->message('Deleting Page: ' . $page->path);
             $page->delete();
         }
     }

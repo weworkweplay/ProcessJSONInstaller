@@ -1,6 +1,6 @@
 <?php
 
-namespace WWWP;
+namespace JSONInstaller;
 
 require_once 'Dependency.php';
 
@@ -9,8 +9,7 @@ use \FieldGroup;
 use \Template;
 use \Page;
 
-class Module
-{
+class Module {
     public $name;
     public $description;
     public $prefix;
@@ -28,8 +27,7 @@ class Module
     public $templatesJSON;
     public $pagesJSON;
 
-    public function __construct()
-    {
+    public function __construct() {
         $this->dependencies = array();
 
         $this->fields = array();
@@ -41,17 +39,14 @@ class Module
      * Create a module from a .json module description
      *
      * @return Module
-     * @author Pieter Beulque
      **/
-    public static function createFromJSON($json)
-    {
+    public static function createFromJSON($json) {
         $module = new Module();
 
         $module->name = $json->name;
         $module->description = $json->description;
         $module->prefix = $json->prefix;
 
-        // List dependencies
         if ($json->dependencies) {
             foreach ($json->dependencies as $dependencyJSON) {
                 $d = new Dependency();
@@ -70,8 +65,7 @@ class Module
         return $module;
     }
 
-    protected function prepareTemplates()
-    {
+    protected function prepareTemplates() {
         foreach ($this->templatesJSON as $templateJSON) {
             $t = wire('templates')->get($templateJSON->name);
 
@@ -107,8 +101,7 @@ class Module
         }
     }
 
-    protected function prepareFields()
-    {
+    protected function prepareFields() {
         foreach ($this->fieldsJSON as $fieldJSON) {
             $name = (!empty($this->prefix) && $fieldJSON->name[0] !== '~') ? $this->prefix . '_' . $fieldJSON->name : $fieldJSON->name;
             $label = (!empty($fieldJSON->label)) ? $fieldJSON->label : '';
@@ -135,8 +128,7 @@ class Module
         }
     }
 
-    protected function preparePages()
-    {
+    protected function preparePages() {
         foreach ($this->pagesJSON as $pageJSON) {
             $p = wire('pages')->get('name=' . $pageJSON->name);
 
@@ -170,10 +162,8 @@ class Module
      * Save all added fields to the database
      *
      * @return void
-     * @author Pieter Beulque
      **/
-    public function install()
-    {
+    public function install() {
         foreach ($this->dependencies as $dependency) {
             $dependency->install();
         }
@@ -195,7 +185,6 @@ class Module
         // By first creating the templates and fields,
         // you can use a new template with new fields in a new page
         // from the same JSON
-
         $this->preparePages();
 
         foreach ($this->pages as $page) {
@@ -207,10 +196,8 @@ class Module
      * Add the created fields to an existing template
      *
      * @return void
-     * @author Pieter Beulque
      **/
-    public function addToTemplate(Template $template)
-    {
+    public function addToTemplate(Template $template) {
         foreach ($this->fields as $field) {
             $template->fields->add($field->name);
         }

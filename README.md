@@ -1,15 +1,4 @@
-# WWWP Installer
-
-```
- _    _        _    _            _      _    _       ______ _
-| |  | |      | |  | |          | |    | |  | |      | ___ \ |
-| |  | | ___  | |  | | ___  _ __| | __ | |  | | ___  | |_/ / | __ _ _   _
-| |/\| |/ _ \ | |/\| |/ _ \| '__| |/ / | |/\| |/ _ \ |  __/| |/ _` | | | |
-\  /\  /  __/ \  /\  / (_) | |  |   <  \  /\  /  __/ | |   | | (_| | |_| |
- \/  \/ \___|  \/  \/ \___/|_|  |_|\_\  \/  \/ \___| \_|   |_|\__,_|\__, |
-                                                                     __/ |
-                                                                    |___/
-```
+# JSON Installer
 
 Module that can interpret JSON as ProcessWire fields, templates and pages. This is very useful for quick setup tasks.
 
