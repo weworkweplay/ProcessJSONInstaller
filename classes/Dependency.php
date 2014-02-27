@@ -1,22 +1,19 @@
 <?php
 
-namespace WWWP;
+namespace JSONInstaller;
 
-class Dependency
-{
+class Dependency {
     public $name;
     public $zip;
     public $core = false;
 
     private $installDir = '../modules/';
 
-    public function __construct()
-    {
+    public function __construct() {
 
     }
 
-    public function install()
-    {
+    public function install() {
         $modules = wire('modules');
         $success = false;
 
@@ -51,5 +48,4 @@ class Dependency
 
         return (bool) $success;
     }
-
 }
