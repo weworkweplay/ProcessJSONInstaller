@@ -51,16 +51,16 @@ class Module {
             foreach ($json->dependencies as $dependencyJSON) {
                 $d = new Dependency();
                 $d->name = $dependencyJSON->name;
-                $d->zip = ($dependencyJSON->zip) ? $dependencyJSON->zip : '';
-                $d->core = ($dependencyJSON->core) ? (bool) $dependencyJSON->core : false;
+                $d->zip = (isset($dependencyJSON->zip)) ? $dependencyJSON->zip : '';
+                $d->core = (isset($dependencyJSON->core)) ? (bool) $dependencyJSON->core : false;
 
                 $module->dependencies[] = $d;
             }
         }
 
-        $module->fieldsJSON = $json->fields;
-        $module->templatesJSON = $json->templates;
-        $module->pagesJSON = $json->pages;
+        $module->fieldsJSON = isset($json->fields) ? $json->fields : array();
+        $module->templatesJSON = isset($json->templates) ? $json->templates : array();
+        $module->pagesJSON = isset($json->pages) ? $json->pages : array();
 
         return $module;
     }
@@ -139,10 +139,10 @@ class Module {
                 $p->template = $pageJSON->template;
 
                 // If set to true, Page:statusHidden, else, Page::statusOn
-                $hidden = !is_null($pageJSON->hidden) ? ((bool) $pageJSON->hidden ? Page::statusHidden : Page::statusOn) : Page::statusOn;
+                $hidden = isset($pageJSON->hidden) ? ((bool) $pageJSON->hidden ? Page::statusHidden : Page::statusOn) : Page::statusOn;
 
                 // If set to true, Page::statusOn, else Page::statusUnpublished
-                $published = !is_null($pageJSON->published) ? ((bool) $pageJSON->published ? Page::statusOn : Page::statusUnpublished) : Page::statusOn;
+                $published = isset($pageJSON->published) ? ((bool) $pageJSON->published ? Page::statusOn : Page::statusUnpublished) : Page::statusOn;
 
                 $p->addStatus($hidden);
                 $p->addStatus($published);

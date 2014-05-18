@@ -21,7 +21,7 @@ class Dependency {
             return true;
         }
 
-        if (!$core && !file_exists($this->installDir . DIRECTORY_SEPARATOR . $this->name)) {
+        if (!$this->core && !file_exists($this->installDir . DIRECTORY_SEPARATOR . $this->name)) {
             $zipPath = $this->installDir . $this->name . '.zip';
             file_put_contents($zipPath, fopen($this->zip, 'r'));
             $zip = new \ZipArchive;
