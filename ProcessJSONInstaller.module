@@ -62,6 +62,7 @@ class ProcessJSONInstaller extends Process {
         $table->headerRow(array(
             'name',
             'description',
+            'action',
             'action'
         ));
 
@@ -69,7 +70,8 @@ class ProcessJSONInstaller extends Process {
             $table->row(array(
                 $module->name,
                 $module->description,
-                'Install' => 'install/' . $key
+                'Install' => 'install/' . $key,
+                'Uninstall' => 'uninstall/' . $key
             ));
         }
 
@@ -165,6 +167,20 @@ class ProcessJSONInstaller extends Process {
         return $module;
     }
 
+    public function uninstallModule($name) {
+        $this->loadModules();
+
+        $module = $this->installableModules[$name];
+
+        if (empty($module)) {
+            throw new WireException();
+        }
+
+        $module->uninstall();
+
+        return $module;
+    }
+
     /**
      * Called when the URL is this module's page URL + "/install/?:name/"
      */
@@ -214,6 +230,66 @@ class ProcessJSONInstaller extends Process {
         }
 
         return $output . '<p><a href="../">Go Back</a></p>';
+    }
+
+    /**
+     * Called when the URL is this module's page URL + "/uninstall/?:name/"
+     */
+    public function ___executeUninstall() {
+
+        $output = '';
+
+        try {
+
+            $module = $this->uninstallModule(wire('input')->urlSegment(2));
+
+            Wire::setFuel('processHeadline', 'Uninstalling ' . $module->name);
+
+            $this->breadcrumbs->add(new Breadcrumb('../', 'JSONInstaller Uninstaller'));
+
+            if (!empty($module->deletedPages)) {
+                $output .= '<h2>Deleted Pages</h2><ul class="json-installer-list">';
+
+                foreach ($module->deletedPages as $page) {
+                    $output .= '<li><code>' . $page . '</code></li>';
+                }
+
+                $output .= '</ul>';
+            }
+
+            if (!empty($module->deletedTemplates)) {
+                $output .= '<h2>Deleted Templates</h2><ul class="json-installer-list">';
+
+                foreach ($module->deletedTemplates as $template) {
+                    $output .= '<li><code>' . $template . '</code></li>';
+                }
+
+                $output .= '</ul>';
+            }
+
+            if (!empty($module->deletedFields)) {
+                $output .= '<h2>Deleted Fields</h2><ul class="json-installer-list">';
+
+                foreach ($module->deletedFields as $field) {
+                    $output .= '<li><code>' . $field . '</code></li>';
+                }
+
+                $output .= '</ul>';
+            }
+
+
+            if(empty($module->deletedPages) && empty($module->deletedTemplates) && empty($module->deletedFields)) {
+                $this->message('Nothing to uninstall for ' . $module->name);
+            } else {
+                $this->message('Uninstalled ' . $module->name);
+            }
+
+        } catch (WireException $e) {
+            $this->error($e->getMessage());
+        }
+
+        return $output . '<p><a href="../">Go Back</a></p>';
+
     }
 
     public function ___install() {

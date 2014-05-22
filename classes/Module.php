@@ -10,11 +10,11 @@ use \Template;
 use \Page;
 
 class Module {
-    
+
     const PROPERTY_TYPE_SELECTOR = "selector";
     const PROPERTY_TYPE_SELECTOR_ID = "selector_id";
     const PROPERTY_TYPE_DEFAULT = "default";
-    
+
     public $name;
     public $description;
     public $prefix;
@@ -27,6 +27,11 @@ class Module {
     public $templates;
     public $pages;
 
+    /* Things uninstalling this module will delete */
+    public $deletedFields;
+    public $deletedTemplates;
+    public $deletedPages;
+
     /* Storing unparsed objects until we want to install */
     public $fieldsJSON;
     public $templatesJSON;
@@ -38,6 +43,10 @@ class Module {
         $this->fields = array();
         $this->templates = array();
         $this->pages = array();
+
+        $this->deletedFields = array();
+        $this->deletedTemplates = array();
+        $this->deletedPages = array();
     }
 
     /**
@@ -194,29 +203,103 @@ class Module {
         }
     }
 
+    protected function deletePages() {
+
+        // uninstall order must be reverse of install order
+        $pagesJSONReversed = array_reverse($this->pagesJSON);
+
+        foreach ($pagesJSONReversed as $pageJSON) {
+
+            $p = wire('pages')->get('name=' . $pageJSON->name);
+
+            if(isset($p->id) && $p->id) {
+
+                $p->delete();
+                $this->deletedPages[] = $pageJSON->name;
+
+            }
+        }
+    }
+
+    protected function deleteTemplates() {
+
+        $templates = wire('templates');
+        $fieldgroups = wire('fieldgroups');
+
+        foreach ($this->templatesJSON as $templateJSON) {
+
+            $t = $templates->get($templateJSON->name);
+            $skip = isset($templateJSON->prefab) && $templateJSON->prefab === true;
+
+            if(isset($t) && $t->id && !$skip) {
+                $fg = $t->fieldgroup;
+                $templates->delete($t, true);
+                $fieldgroups->delete($fg, true);
+                $this->deletedTemplates[] = $templateJSON->name;
+            }
+        }
+    }
+
+    protected function deleteFields() {
+
+        $fields = wire('fields');
+
+        foreach ($this->fieldsJSON as $fieldJSON) {
+
+            $name = (!empty($this->prefix) && $fieldJSON->name[0] !== '~') ? $this->prefix . '_' . $fieldJSON->name : $fieldJSON->name;
+            $name = ($name[0] === '~') ? substr($name, 1) : $name;
+
+            $f = $fields->get($name);
+            $skip = isset($fieldJSON->prefab) && $fieldJSON->prefab === true;
+
+            if(isset($f->id) && $f->id && !$skip) {
+                self::removeFieldFromFieldgroups($f);
+                $fields->delete($f, true);
+                $this->deletedFields[] = $name;
+            }
+        }
+    }
+
+
+    protected static function removeFieldFromFieldgroups($field) {
+
+        $fieldgroups = wire("fieldgroups");
+
+        foreach ($fieldgroups as $fieldgroup) {
+
+            $fieldExists = $fieldgroup->has($field);
+
+            if($fieldExists) {
+                $fieldgroup->remove($field);
+                $fieldgroup->save();
+            }
+        }
+    }
+
+
     public static function applyAttributesOrDefaults($attributes, $page, $hasSelector) {
         foreach ($attributes as $attr) {
-            
+
             // DRY some
-            $fuel = isset($attr->fuel) ? $attr->fuel : "pages";
+            $wire = isset($attr->fuel) ? wire($attr->fuel) : wire("pages");
             $type = isset($attr->type) ? $attr->type : self::PROPERTY_TYPE_DEFAULT;
             $name = $attr->name;
             $value = $attr->value;
-            
+
             switch (true) {
-                
+
                 // if "selector" save the value as a selected page
                 case $type === self::PROPERTY_TYPE_SELECTOR:
-                    $page->set($name, wire($fuel)->get($value));
+                    $page->set($name, $wire->get($value));
                     $hasSelector = true;
                     break;
-                
+
                 // if "selector_id" save the value as id of a selected page
                 case $type === self::PROPERTY_TYPE_SELECTOR_ID:
-                    $page->set($name, wire($fuel)->get($value)->id);
+                    $page->set($name, $wire->get($value)->id);
                     $hasSelector = true;
                     break;
-                
+
                 // just save the value as is
                 default:
                     $page->set($name, $value);
@@ -259,6 +342,22 @@ class Module {
         foreach ($this->pages as $page) {
             $page->save();
         }
+    }
+
+    /**
+     * Delete everything
+     *
+     * @return void
+     **/
+    public function uninstall() {
+        // foreach ($this->dependencies as $dependency) {
+        //     $dependency->install();
+        // }
+
+        $this->deletePages();
+        $this->deleteTemplates();
+        $this->deleteFields();
+
     }
 
     /**
