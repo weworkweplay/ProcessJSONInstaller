@@ -74,6 +74,8 @@
                     "admin_column_left_END",
                     "admin_column_right",
                         "options",
+                        "summary",
+                        "sidebar",
                     "admin_column_right_END"
                 ],
             "attributes": [
