@@ -9,7 +9,7 @@
             var confirmMessage = [
                 "Warning: This feature is experimental."
                 , ""
-                , "The uninstall process will try to delete all pages, templates and fields defined in this module json, so if you included directives to merely modify existing pages, templates or fields, you should add a 'prefab' property t o each of those and set it to 'true'."
+                , "The uninstall process will try to delete all pages, templates and fields defined in this module json, so if you included directives to merely modify existing pages, templates or fields, you should add a 'prefab' property to each of those and set it to 'true'."
             ];
 
             return confirmed = confirm(confirmMessage.join("\n"));
