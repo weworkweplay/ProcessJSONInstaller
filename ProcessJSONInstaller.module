@@ -215,17 +215,17 @@ class ProcessJSONInstaller extends Process {
      * Called when the URL is this module's page URL + "/uninstall/?:name/"
      */
     public function ___executeUninstall() {
-        
+
+        $this->breadcrumbs->add(new Breadcrumb('../', 'JSONInstaller Uninstaller'));
+
         $outputTemplatePath = $this->templatePath . "/uninstall.php";
         $outputTemplate = new TemplateFile($outputTemplatePath);
-        
+
         try {
 
             $module = $this->uninstallModule(wire('input')->urlSegment(2));
 
             Wire::setFuel('processHeadline', 'Uninstalling ' . $module->name);
-
-            $this->breadcrumbs->add(new Breadcrumb('../', 'JSONInstaller Uninstaller'));
 
             $outputTemplate->setArray(array(
                 "deletedFields" => $module->deletedFields,

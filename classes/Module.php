@@ -32,6 +32,8 @@ class Module {
     public $deletedTemplates;
     public $deletedPages;
 
+    public $fieldsHaveSelectors = false;
+
     /* Storing unparsed objects until we want to install */
     public $fieldsJSON;
     public $templatesJSON;
@@ -148,6 +150,9 @@ class Module {
 
             // apply attributes and determine if selectors are used
             $hasSelector = self::applyAttributesOrDefaults($attributes, $f, $hasSelector);
+            if($hasSelector) {
+                $this->fieldsHaveSelectors = true;
+            }
 
             // only save if selector is present
             // see description in preparePages()
@@ -341,6 +346,16 @@ class Module {
 
         foreach ($this->pages as $page) {
             $page->save();
+        }
+
+        // rerun field installation, because they may
+        // reference pages via selector that are created afterwards
+        // for example: for page fields
+        if($this->fieldsHaveSelectors) {
+            $this->prepareFields();
+            foreach ($this->fields as $field) {
+                $field->save();
+            }
         }
     }
 

@@ -169,7 +169,17 @@
                             "value": "Another other option"
                         }
                     ]
+                },
+        {
+            "name": "simple-page-test",
+            "template": "simple-page",
+            "attributes": [
+                {
+                    "name": "title",
+                    "value": "Simple Page Test"
                 }
+            ]
+        }
     ]
 
 }
