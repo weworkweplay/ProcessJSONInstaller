@@ -36,6 +36,7 @@ class ProcessJSONInstaller extends Process {
      * Array containing all installable modules
      */
     protected $installableModules;
+    protected $templatePath;
 
     private function loadModules() {
         $dir = wire('config')->paths->siteModules . get_class() . DIRECTORY_SEPARATOR . 'modules';
@@ -53,6 +54,7 @@ class ProcessJSONInstaller extends Process {
     public function init() {
         parent::init(); // required
         $this->loadModules();
+        $this->templatePath = dirname(__FILE__) . "/templates";
     }
 
     public function ___execute() {
@@ -197,47 +199,22 @@ class ProcessJSONInstaller extends Process {
 
         $this->breadcrumbs->add(new Breadcrumb('../', 'JSONInstaller Installer'));
 
-        $output = '';
+        $outputTemplatePath = $this->templatePath . "/install.php";
+        $outputTemplate = new TemplateFile($outputTemplatePath);
+        $outputTemplate->setArray(array(
+            "installedFields" => $module->fields,
+            "installedTemplates" => $module->templates,
+            "installedPages" => $module->pages
+        ));
 
-        if (!empty($module->fields)) {
-            $output .= '<h2>Created or edited fields</h2><ul class="json-installer-list">';
+        return $outputTemplate->render();
 
-            foreach ($module->fields as $field) {
-                $output .= '<li><code>' . $field->name . '</code> - ' . $field->label . '</li>';
-            }
-
-            $output .= '</ul>';
-        }
-
-        if (!empty($module->templates)) {
-            $output .= '<h2>Created or edited templates</h2><ul class="json-installer-list">';
-
-            foreach ($module->templates as $template) {
-                $output .= '<li><code>' . $template->name . '</code> - ' . $template->label . '</li>';
-            }
-
-            $output .= '</ul>';
-        }
-
-        if (!empty($module->pages)) {
-            $output .= '<h2>Created or edited pages</h2><ul class="json-installer-list">';
-
-            foreach ($module->pages as $page) {
-                $output .= '<li>' . $page->name . '</li>';
-            }
-
-            $output .= '</ul>';
-        }
-
-        return $output . '<p><a href="../">Go Back</a></p>';
     }
 
     /**
      * Called when the URL is this module's page URL + "/uninstall/?:name/"
      */
     public function ___executeUninstall() {
-
-        $output = '';
 
         try {
 
@@ -247,36 +224,13 @@ class ProcessJSONInstaller extends Process {
 
             $this->breadcrumbs->add(new Breadcrumb('../', 'JSONInstaller Uninstaller'));
 
-            if (!empty($module->deletedPages)) {
-                $output .= '<h2>Deleted Pages</h2><ul class="json-installer-list">';
-
-                foreach ($module->deletedPages as $page) {
-                    $output .= '<li><code>' . $page . '</code></li>';
-                }
-
-                $output .= '</ul>';
-            }
-
-            if (!empty($module->deletedTemplates)) {
-                $output .= '<h2>Deleted Templates</h2><ul class="json-installer-list">';
-
-                foreach ($module->deletedTemplates as $template) {
-                    $output .= '<li><code>' . $template . '</code></li>';
-                }
-
-                $output .= '</ul>';
-            }
-
-            if (!empty($module->deletedFields)) {
-                $output .= '<h2>Deleted Fields</h2><ul class="json-installer-list">';
-
-                foreach ($module->deletedFields as $field) {
-                    $output .= '<li><code>' . $field . '</code></li>';
-                }
-
-                $output .= '</ul>';
-            }
-
+            $outputTemplatePath = $this->templatePath . "/uninstall.php";
+            $outputTemplate = new TemplateFile($outputTemplatePath);
+            $outputTemplate->setArray(array(
+                "deletedFields" => $module->deletedFields,
+                "deletedTemplates" => $module->deletedTemplates,
+                "deletedPages" => $module->deletedPages
+            ));
 
             if(empty($module->deletedPages) && empty($module->deletedTemplates) && empty($module->deletedFields)) {
                 $this->message('Nothing to uninstall for ' . $module->name);
@@ -288,7 +242,7 @@ class ProcessJSONInstaller extends Process {
             $this->error($e->getMessage());
         }
 
-        return $output . '<p><a href="../">Go Back</a></p>';
+        return $outputTemplate->render();
 
     }
 

@@ -170,7 +170,7 @@ class Module {
                 $p = new Page();
                 $p->name = $pageJSON->name;
 
-                $p->parent = ($pageJSON->parent) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
+                $p->parent = (isset($pageJSON->parent)) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
 
                 $p->template = $pageJSON->template;
 
