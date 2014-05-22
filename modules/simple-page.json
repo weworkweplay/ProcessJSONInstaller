@@ -51,6 +51,10 @@
                 {
                     "name": "optionColumns",
                     "value": 1
+                },
+                {
+                    "name": "derefAsPage",
+                    "value": 0
                 }
             ]
         }
@@ -131,6 +135,36 @@
                         {
                             "name": "title",
                             "value": "Redirect to first child"
+                        }
+                    ]
+                },
+                {
+                    "name": "someotheroption",
+                    "template": "admin",
+                    "attributes": [
+                        {
+                            "name": "parent",
+                            "value": "parent.name=settings,name=page-options",
+                            "type": "selector"
+                        },
+                        {
+                            "name": "title",
+                            "value": "Some other option"
+                        }
+                    ]
+                },
+                {
+                    "name": "anotheroption",
+                    "template": "admin",
+                    "attributes": [
+                        {
+                            "name": "parent",
+                            "value": "parent.name=settings,name=page-options",
+                            "type": "selector"
+                        },
+                        {
+                            "name": "title",
+                            "value": "Another other option"
                         }
                     ]
                 }
