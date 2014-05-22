@@ -10,6 +10,11 @@ use \Template;
 use \Page;
 
 class Module {
+    
+    const PROPERTY_TYPE_SELECTOR = "selector";
+    const PROPERTY_TYPE_SELECTOR_ID = "selector_id";
+    const PROPERTY_TYPE_DEFAULT = "default";
+    
     public $name;
     public $description;
     public $prefix;
@@ -68,6 +73,8 @@ class Module {
     protected function prepareTemplates() {
         foreach ($this->templatesJSON as $templateJSON) {
             $t = wire('templates')->get($templateJSON->name);
+            $attributes = (!empty($templateJSON->attributes)) ? $templateJSON->attributes : array();
+            $hasSelector = false;
 
             if (!$t) {
                 $t = new Template();
@@ -97,6 +104,15 @@ class Module {
 
             $t->fields = $fg;
 
+            // apply attributes and determine if selectors are used
+            $hasSelector = self::applyAttributesOrDefaults($attributes, $t, $hasSelector);
+
+            // only save if selector is present
+            // see description in preparePages()
+            if($hasSelector) {
+                $t->save();
+            }
+
             $this->templates[] = $t;
         }
     }
@@ -107,6 +123,7 @@ class Module {
             $label = (!empty($fieldJSON->label)) ? $fieldJSON->label : '';
             $description = (!empty($fieldJSON->description)) ? $fieldJSON->description : '';
             $attributes = (!empty($fieldJSON->attributes)) ? $fieldJSON->attributes : array();
+            $hasSelector = false;
 
             $name = ($name[0] === '~') ? substr($name, 1) : $name;
 
@@ -120,8 +137,13 @@ class Module {
                 $f->description = $description;
             }
 
-            foreach ($attributes as $attr) {
-                $f->set($attr->name, $attr->value);
+            // apply attributes and determine if selectors are used
+            $hasSelector = self::applyAttributesOrDefaults($attributes, $f, $hasSelector);
+
+            // only save if selector is present
+            // see description in preparePages()
+            if($hasSelector) {
+                $f->save();
             }
 
             $this->fields[] = $f;
@@ -131,11 +153,16 @@ class Module {
     protected function preparePages() {
         foreach ($this->pagesJSON as $pageJSON) {
             $p = wire('pages')->get('name=' . $pageJSON->name);
+            $attributes = (!empty($pageJSON->attributes)) ? $pageJSON->attributes : array();
+            $defaults = (!empty($pageJSON->defaults)) ? $pageJSON->defaults : array();
+            $hasSelector = false;
 
             if (!$p->id) {
                 $p = new Page();
                 $p->name = $pageJSON->name;
+
                 $p->parent = ($pageJSON->parent) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
+
                 $p->template = $pageJSON->template;
 
                 // If set to true, Page:statusHidden, else, Page::statusOn
@@ -147,15 +174,57 @@ class Module {
                 $p->addStatus($hidden);
                 $p->addStatus($published);
 
-                if ($pageJSON->defaults) {
-                    foreach ($pageJSON->defaults as $default) {
-                        $p->set($default->field, $default->value);
-                    }
-                }
+                // apply defaults and determine if selectors are used
+                $hasSelector = self::applyAttributesOrDefaults($defaults, $p, $hasSelector);
+
+            }
+
+            // apply attributes and determine if selectors are used
+            $hasSelector = self::applyAttributesOrDefaults($attributes, $p, $hasSelector);
+
+            // only save if selector is present
+            // saving is necessary if pages in the same loop are referencing
+            // each other via selector, since selecting a not yet
+            // existing/saved page would not work
+            if($hasSelector) {
+                $p->save();
             }
 
             $this->pages[] = $p;
         }
+    }
+
+    public static function applyAttributesOrDefaults($attributes, $page, $hasSelector) {
+        foreach ($attributes as $attr) {
+            
+            // DRY some
+            $fuel = isset($attr->fuel) ? $attr->fuel : "pages";
+            $type = isset($attr->type) ? $attr->type : self::PROPERTY_TYPE_DEFAULT;
+            $name = $attr->name;
+            $value = $attr->value;
+            
+            switch (true) {
+                
+                // if "selector" save the value as a selected page
+                case $type === self::PROPERTY_TYPE_SELECTOR:
+                    $page->set($name, wire($fuel)->get($value));
+                    $hasSelector = true;
+                    break;
+                
+                // if "selector_id" save the value as id of a selected page
+                case $type === self::PROPERTY_TYPE_SELECTOR_ID:
+                    $page->set($name, wire($fuel)->get($value)->id);
+                    $hasSelector = true;
+                    break;
+                
+                // just save the value as is
+                default:
+                    $page->set($name, $value);
+                    break;
+            }
+
+        }
+        return $hasSelector;
     }
 
     /**

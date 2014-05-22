@@ -1,0 +1,176 @@
+{
+    "name": "Simple Page",
+    "description": "Adds a switch to show 'Under Construction' to visitors",
+    "prefix": "",
+    "dependencies": [
+        {
+            "name": "AdminTemplateColumns",
+            "zip": "https://github.com/Notanotherdotcom/AdminTemplateColumns/zipball/master",
+            "core": false
+        },
+        {
+            "name": "ProcessPageDelete",
+            "zip": "https://github.com/NicoKnoll/ProcessPageDelete/zipball/master",
+            "core": false
+        }    
+    ],
+    "fields": [
+        {
+            "name": "headline",
+            "type": "FieldtypeText",
+            "label": "Headline",
+            "attributes": [
+                {
+                    "name": "tags",
+                    "value": "some-stuff"
+                },
+                {
+                    "name": "collapsed",
+                    "value": 2
+                }
+            ]
+        },
+        {
+            "name": "subHeadline",
+            "type": "FieldtypeText",
+            "label": "Sub headline",
+            "attributes": [
+                {
+                    "name": "tags",
+                    "value": "some-stuff"
+                },
+                {
+                    "name": "collapsed",
+                    "value": 2
+                }
+            ]
+        },
+        {
+            "name": "value",
+            "type": "FieldtypeInteger",
+            "label": "Value",
+            "attributes": [
+                {
+                    "name": "tags",
+                    "value": "some-stuff"
+                }
+            ]
+        },
+        {
+            "name": "options",
+            "type": "FieldtypePage",
+            "label": "Options",
+            "attributes": [
+                {
+                    "name": "tags",
+                    "value": "some-stuff"
+                },
+                {
+                    "name": "parent_id",
+                    "value": "parent.name=settings,name=page-options",
+                    "type": "selector_id"
+                },
+                {
+                    "name": "inputfield",
+                    "value": "InputfieldCheckboxes"
+                },
+                {
+                    "name": "optionColumns",
+                    "value": 1
+                }
+            ]
+        }
+    ],
+    "templates": [
+        {
+            "name": "simple-page",
+            "label": "Simple Page",
+            "fields":
+                [
+                    "admin_column_left",
+                        "title",
+                        "headline",
+                        "subHeadline",
+                        "subheadline",
+                        "body",
+                        "images",
+                    "admin_column_left_END",
+                    "admin_column_right",
+                        "options",
+                    "admin_column_right_END"
+                ],
+            "attributes": [
+                {
+                    "name": "tags",
+                    "value": "some-stuff"
+                }
+            ]
+        },
+        {
+            "name": "settings-wrapper",
+            "label": "Settings wrapper",
+            "fields": [],
+            "attributes": [
+                {
+                    "name": "childTemplates",
+                    "value": [
+                        "settings", "settings-wrapper"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "settings",
+            "label": "Settings",
+            "fields": ["value"]
+        }
+    ],
+    "pages": [
+        {
+            "name": "settings",
+            "template": "admin",
+            "attributes": [
+                {
+                    "name": "parent",
+                    "value": "id=2",
+                    "type": "selector"
+                },
+                {
+                    "name": "title",
+                    "value": "Settings"
+                }
+            ]
+        },
+            {
+                "name": "page-options",
+                "template": "admin",
+                "attributes": [
+                    {
+                        "name": "parent",
+                        "value": "parent_id=2,name=settings",
+                        "type": "selector"
+                    },
+                    {
+                        "name": "title",
+                        "value": "Page options"
+                    }
+                ]
+            },
+            {
+                "name": "redirecttofirstchild",
+                "template": "admin",
+                "attributes": [
+                    {
+                        "name": "parent",
+                        "value": "parent.name=settings,name=page-options",
+                        "type": "selector"
+                    },
+                    {
+                        "name": "title",
+                        "value": "Redirect to first child"
+                    }
+                ]
+            }            
+    ]
+                
+}
