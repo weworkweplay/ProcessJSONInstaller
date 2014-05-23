@@ -214,13 +214,14 @@ class Module {
         $pagesJSONReversed = array_reverse($this->pagesJSON);
 
         foreach ($pagesJSONReversed as $pageJSON) {
-
+            
+            // TODO: could cause trouble since a page name is not unique
             $p = wire('pages')->get('name=' . $pageJSON->name);
 
             if(isset($p->id) && $p->id) {
-
+                $url = $p->url();
                 $p->delete();
-                $this->deletedPages[] = $pageJSON->name;
+                $this->deletedPages[] = $url;
 
             }
         }
