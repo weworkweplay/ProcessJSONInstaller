@@ -21,7 +21,7 @@
 <?php endif ?>
 
 <?php if (!empty($installedPages)): ?>
-	<h2>Created or edited templates</h2>
+	<h2>Created or edited pages</h2>
 	<ul class="json-installer-list">
 		<?php foreach ($installedPages as $installedPage): ?>
 

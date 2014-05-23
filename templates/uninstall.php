@@ -21,7 +21,7 @@
 <?php endif ?>
 
 <?php if (!empty($deletedPages)): ?>
-	<h2>Deleted templates</h2>
+	<h2>Deleted pages</h2>
 	<ul class="json-installer-list">
 		<?php foreach ($deletedPages as $deletedPage): ?>
 
