@@ -214,9 +214,8 @@ class Module {
         $pagesJSONReversed = array_reverse($this->pagesJSON);
 
         foreach ($pagesJSONReversed as $pageJSON) {
-            
-            // TODO: could cause trouble since a page name is not unique
-            $p = wire('pages')->get('name=' . $pageJSON->name);
+
+            $p = wire('pages')->get('name=' . $pageJSON->name .',template=' . $pageJSON->template);
 
             if (isset($p->id) && $p->id) {
                 $url = $p->url();

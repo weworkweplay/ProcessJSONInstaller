@@ -74,7 +74,7 @@ class ProcessJSONInstaller extends Process {
 
         $table->headerRow($headerColumns);
 
-        foreach($this->installableModules as $key => $module) {
+        foreach ($this->installableModules as $key => $module) {
 
             $contentColumns = array(
                 $module->name,
