@@ -36,6 +36,7 @@ class ProcessJSONInstaller extends Process {
      * Array containing all installable modules
      */
     protected $installableModules;
+    protected $templatePath;
 
     private function loadModules() {
         $dir = wire('config')->paths->siteModules . get_class() . DIRECTORY_SEPARATOR . 'modules';
@@ -53,24 +54,39 @@ class ProcessJSONInstaller extends Process {
     public function init() {
         parent::init(); // required
         $this->loadModules();
+        $this->templatePath = dirname(__FILE__) . '/templates';
     }
 
     public function ___execute() {
-        $table = wire('modules')->get("MarkupAdminDataTable");
-        $url = wire('pages')->get("template=admin, name=" . self::pageName)->url;
+        $table = wire('modules')->get('MarkupAdminDataTable');
+        $url = wire('pages')->get('template=admin, name=' . self::pageName)->url;
+        $config = wire('config');
 
-        $table->headerRow(array(
+        $headerColumns = array(
             'name',
             'description',
             'action'
-        ));
+        );
 
-        foreach($this->installableModules as $key => $module) {
-            $table->row(array(
+        if ($config->advanced) {
+            $headerColumns[] = 'action';
+        }
+
+        $table->headerRow($headerColumns);
+
+        foreach ($this->installableModules as $key => $module) {
+
+            $contentColumns = array(
                 $module->name,
                 $module->description,
                 'Install' => 'install/' . $key
-            ));
+            );
+
+            if ($config->advanced) {
+                $contentColumns['Uninstall'] = 'uninstall/' . $key;
+            }
+
+            $table->row($contentColumns);
         }
 
         $table->action(array('Export site' => $url . 'export/'));
@@ -89,7 +105,7 @@ class ProcessJSONInstaller extends Process {
             while (($file = readdir($dh)) !== false) {
                 if ($file === '.' || $file === '..' || $file === '.DS_Store') continue;
 
-                if(!is_file($actualDir . '/' . $file)) {
+                if (!is_file($actualDir . '/' . $file)) {
                     if ($file !== '.git') {
                         $this->addFolderToZip($actualDir . '/' . $file, $zip);
                     }
@@ -145,9 +161,9 @@ class ProcessJSONInstaller extends Process {
 
         $file = $this->buildZipArchive();
 
-        header("Content-Type: application/zip");
-        header("Content-Transfer-Encoding: Binary");
-        header("Content-disposition: attachment; filename=\"export-" . $filename . "-" . date('Ymd') . ".zip" . "\"");
+        header('Content-Type: application/zip');
+        header('Content-Transfer-Encoding: Binary');
+        header('Content-disposition: attachment; filename="export-' . $filename . '-' . date('Ymd') . '.zip' . '"');
         readfile($file);
     }
 
@@ -165,6 +181,20 @@ class ProcessJSONInstaller extends Process {
         return $module;
     }
 
+    public function uninstallModule($name) {
+        $this->loadModules();
+
+        $module = $this->installableModules[$name];
+
+        if (empty($module)) {
+            throw new WireException();
+        }
+
+        $module->uninstall();
+
+        return $module;
+    }
+
     /**
      * Called when the URL is this module's page URL + "/install/?:name/"
      */
@@ -172,7 +202,7 @@ class ProcessJSONInstaller extends Process {
         try {
             $module = $this->installModule(wire('input')->urlSegment(2));
         } catch (WireException $e) {
-            header('Location:' . wire('pages')->get("template=admin, name=" . self::pageName)->url);
+            header('Location:' . wire('pages')->get('template=admin, name=' . self::pageName)->url);
         }
 
         $this->message('Succesfully installed or updated ' . $module->name);
@@ -181,39 +211,52 @@ class ProcessJSONInstaller extends Process {
 
         $this->breadcrumbs->add(new Breadcrumb('../', 'JSONInstaller Installer'));
 
-        $output = '';
+        $outputTemplatePath = $this->templatePath . '/install.php';
+        $outputTemplate = new TemplateFile($outputTemplatePath);
+        $outputTemplate->setArray(array(
+            'installedFields' => $module->fields,
+            'installedTemplates' => $module->templates,
+            'installedPages' => $module->pages
+        ));
 
-        if (!empty($module->fields)) {
-            $output .= '<h2>Created or edited fields</h2><ul class="json-installer-list">';
+        return $outputTemplate->render();
 
-            foreach ($module->fields as $field) {
-                $output .= '<li><code>' . $field->name . '</code> - ' . $field->label . '</li>';
+    }
+
+    /**
+     * Called when the URL is this module's page URL + "/uninstall/?:name/"
+     */
+    public function ___executeUninstall() {
+
+        $this->breadcrumbs->add(new Breadcrumb('../', 'JSONInstaller Uninstaller'));
+
+        $outputTemplatePath = $this->templatePath . '/uninstall.php';
+        $outputTemplate = new TemplateFile($outputTemplatePath);
+
+        try {
+
+            $module = $this->uninstallModule(wire('input')->urlSegment(2));
+
+            Wire::setFuel('processHeadline', 'Uninstalling ' . $module->name);
+
+            $outputTemplate->setArray(array(
+                'deletedFields' => $module->deletedFields,
+                'deletedTemplates' => $module->deletedTemplates,
+                'deletedPages' => $module->deletedPages
+            ));
+
+            if (empty($module->deletedPages) && empty($module->deletedTemplates) && empty($module->deletedFields)) {
+                $this->message('Nothing to uninstall for ' . $module->name);
+            } else {
+                $this->message('Uninstalled ' . $module->name);
             }
 
-            $output .= '</ul>';
+        } catch (WireException $e) {
+            $this->error($e->getMessage());
         }
 
-        if (!empty($module->templates)) {
-            $output .= '<h2>Created or edited templates</h2><ul class="json-installer-list">';
+        return $outputTemplate->render();
 
-            foreach ($module->templates as $template) {
-                $output .= '<li><code>' . $template->name . '</code> - ' . $template->label . '</li>';
-            }
-
-            $output .= '</ul>';
-        }
-
-        if (!empty($module->pages)) {
-            $output .= '<h2>Created or edited pages</h2><ul class="json-installer-list">';
-
-            foreach ($module->pages as $page) {
-                $output .= '<li>' . $page->name . '</li>';
-            }
-
-            $output .= '</ul>';
-        }
-
-        return $output . '<p><a href="../">Go Back</a></p>';
     }
 
     public function ___install() {

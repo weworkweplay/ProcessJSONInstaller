@@ -1,0 +1,185 @@
+{
+    "name": "Simple Page",
+    "description": "Creates a simple page template with two columns and some page options",
+    "prefix": "",
+    "dependencies": [
+        {
+            "name": "AdminTemplateColumns",
+            "zip": "https://github.com/Notanotherdotcom/AdminTemplateColumns/zipball/master",
+            "core": false
+        },
+        {
+            "name": "ProcessPageDelete",
+            "zip": "https://github.com/NicoKnoll/ProcessPageDelete/zipball/master",
+            "core": false
+        }
+    ],
+    "fields": [
+        {
+            "name": "subHeadline",
+            "type": "FieldtypeText",
+            "label": "Sub headline",
+            "attributes": [
+                {
+                    "name": "tags",
+                    "value": "awesome"
+                },
+                {
+                    "name": "collapsed",
+                    "value": 2
+                }
+            ]
+        },
+        {
+            "name": "options",
+            "type": "FieldtypePage",
+            "label": "Options",
+            "attributes": [
+                {
+                    "name": "tags",
+                    "value": "awesome"
+                },
+                {
+                    "name": "parent_id",
+                    "value": "parent.name=settings,name=page-options",
+                    "type": "selector_id"
+                },
+                {
+                    "name": "inputfield",
+                    "value": "InputfieldCheckboxes"
+                },
+                {
+                    "name": "optionColumns",
+                    "value": 1
+                },
+                {
+                    "name": "derefAsPage",
+                    "value": 0
+                }
+            ]
+        }
+    ],
+    "templates": [
+        {
+            "name": "simple-page",
+            "label": "Simple Page",
+            "fields":
+                [
+                    "admin_column_left",
+                        "title",
+                        "headline",
+                        "subHeadline",
+                        "body",
+                        "images",
+                    "admin_column_left_END",
+                    "admin_column_right",
+                        "options",
+                        "summary",
+                        "sidebar",
+                    "admin_column_right_END"
+                ],
+            "attributes": [
+                {
+                    "name": "tags",
+                    "value": "awesome"
+                }
+            ]
+        },
+        {
+            "name": "basic-page",
+            "prefab": true,
+            "fields":
+                [
+                    "subHeadline"
+                ]
+        }
+    ],
+    "pages": [
+        {
+            "name": "settings",
+            "template": "admin",
+            "attributes": [
+                {
+                    "name": "parent",
+                    "value": "id=2",
+                    "type": "selector"
+                },
+                {
+                    "name": "title",
+                    "value": "Settings"
+                }
+            ]
+        },
+            {
+                "name": "page-options",
+                "template": "admin",
+                "attributes": [
+                    {
+                        "name": "parent",
+                        "value": "parent_id=2,name=settings",
+                        "type": "selector"
+                    },
+                    {
+                        "name": "title",
+                        "value": "Page options"
+                    }
+                ]
+            },
+                {
+                    "name": "firstchildredirect",
+                    "template": "admin",
+                    "attributes": [
+                        {
+                            "name": "parent",
+                            "value": "parent.name=settings,name=page-options",
+                            "type": "selector"
+                        },
+                        {
+                            "name": "title",
+                            "value": "Redirect to first child"
+                        }
+                    ]
+                },
+                {
+                    "name": "someotheroption",
+                    "template": "admin",
+                    "attributes": [
+                        {
+                            "name": "parent",
+                            "value": "parent.name=settings,name=page-options",
+                            "type": "selector"
+                        },
+                        {
+                            "name": "title",
+                            "value": "Some other option"
+                        }
+                    ]
+                },
+                {
+                    "name": "anotheroption",
+                    "template": "admin",
+                    "attributes": [
+                        {
+                            "name": "parent",
+                            "value": "parent.name=settings,name=page-options",
+                            "type": "selector"
+                        },
+                        {
+                            "name": "title",
+                            "value": "Another other option"
+                        }
+                    ]
+                },
+        {
+            "name": "simple-page-test",
+            "template": "simple-page",
+            "attributes": [
+                {
+                    "name": "title",
+                    "value": "Simple Page Test"
+                }
+            ]
+        }
+    ]
+
+}

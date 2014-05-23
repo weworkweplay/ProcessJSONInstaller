@@ -10,6 +10,11 @@ use \Template;
 use \Page;
 
 class Module {
+
+    const PROPERTY_TYPE_SELECTOR = 'selector';
+    const PROPERTY_TYPE_SELECTOR_ID = 'selector_id';
+    const PROPERTY_TYPE_DEFAULT = 'default';
+
     public $name;
     public $description;
     public $prefix;
@@ -22,6 +27,13 @@ class Module {
     public $templates;
     public $pages;
 
+    /* Things uninstalling this module will delete */
+    public $deletedFields;
+    public $deletedTemplates;
+    public $deletedPages;
+
+    public $fieldsHaveSelectors = false;
+
     /* Storing unparsed objects until we want to install */
     public $fieldsJSON;
     public $templatesJSON;
@@ -33,6 +45,10 @@ class Module {
         $this->fields = array();
         $this->templates = array();
         $this->pages = array();
+
+        $this->deletedFields = array();
+        $this->deletedTemplates = array();
+        $this->deletedPages = array();
     }
 
     /**
@@ -68,6 +84,8 @@ class Module {
     protected function prepareTemplates() {
         foreach ($this->templatesJSON as $templateJSON) {
             $t = wire('templates')->get($templateJSON->name);
+            $attributes = (!empty($templateJSON->attributes)) ? $templateJSON->attributes : array();
+            $hasSelector = false;
 
             if (!$t) {
                 $t = new Template();
@@ -97,6 +115,15 @@ class Module {
 
             $t->fields = $fg;
 
+            // apply attributes and determine if selectors are used
+            $hasSelector = self::applyAttributesOrDefaults($attributes, $t, $hasSelector);
+
+            // only save if selector is present
+            // see description in preparePages()
+            if ($hasSelector) {
+                $t->save();
+            }
+
             $this->templates[] = $t;
         }
     }
@@ -107,6 +134,7 @@ class Module {
             $label = (!empty($fieldJSON->label)) ? $fieldJSON->label : '';
             $description = (!empty($fieldJSON->description)) ? $fieldJSON->description : '';
             $attributes = (!empty($fieldJSON->attributes)) ? $fieldJSON->attributes : array();
+            $hasSelector = false;
 
             $name = ($name[0] === '~') ? substr($name, 1) : $name;
 
@@ -120,8 +148,16 @@ class Module {
                 $f->description = $description;
             }
 
-            foreach ($attributes as $attr) {
-                $f->set($attr->name, $attr->value);
+            // apply attributes and determine if selectors are used
+            $hasSelector = self::applyAttributesOrDefaults($attributes, $f, $hasSelector);
+            if ($hasSelector) {
+                $this->fieldsHaveSelectors = true;
+            }
+
+            // only save if selector is present
+            // see description in preparePages()
+            if ($hasSelector) {
+                $f->save();
             }
 
             $this->fields[] = $f;
@@ -131,11 +167,16 @@ class Module {
     protected function preparePages() {
         foreach ($this->pagesJSON as $pageJSON) {
             $p = wire('pages')->get('name=' . $pageJSON->name);
+            $attributes = (!empty($pageJSON->attributes)) ? $pageJSON->attributes : array();
+            $defaults = (!empty($pageJSON->defaults)) ? $pageJSON->defaults : array();
+            $hasSelector = false;
 
             if (!$p->id) {
                 $p = new Page();
                 $p->name = $pageJSON->name;
-                $p->parent = ($pageJSON->parent) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
+
+                $p->parent = (isset($pageJSON->parent)) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
+
                 $p->template = $pageJSON->template;
 
                 // If set to true, Page:statusHidden, else, Page::statusOn
@@ -147,15 +188,131 @@ class Module {
                 $p->addStatus($hidden);
                 $p->addStatus($published);
 
-                if ($pageJSON->defaults) {
-                    foreach ($pageJSON->defaults as $default) {
-                        $p->set($default->field, $default->value);
-                    }
-                }
+                // apply defaults and determine if selectors are used
+                $hasSelector = self::applyAttributesOrDefaults($defaults, $p, $hasSelector);
+
+            }
+
+            // apply attributes and determine if selectors are used
+            $hasSelector = self::applyAttributesOrDefaults($attributes, $p, $hasSelector);
+
+            // only save if selector is present
+            // saving is necessary if pages in the same loop are referencing
+            // each other via selector, since selecting a not yet
+            // existing/saved page would not work
+            if ($hasSelector) {
+                $p->save();
             }
 
             $this->pages[] = $p;
         }
+    }
+
+    protected function deletePages() {
+
+        // uninstall order must be reverse of install order
+        $pagesJSONReversed = array_reverse($this->pagesJSON);
+
+        foreach ($pagesJSONReversed as $pageJSON) {
+
+            $p = wire('pages')->get('name=' . $pageJSON->name .',template=' . $pageJSON->template);
+
+            if (isset($p->id) && $p->id) {
+                $url = $p->url();
+                $p->delete();
+                $this->deletedPages[] = $url;
+
+            }
+        }
+    }
+
+    protected function deleteTemplates() {
+
+        $templates = wire('templates');
+        $fieldgroups = wire('fieldgroups');
+
+        foreach ($this->templatesJSON as $templateJSON) {
+
+            $t = $templates->get($templateJSON->name);
+            $skip = isset($templateJSON->prefab) && $templateJSON->prefab === true;
+
+            if (isset($t) && $t->id && !$skip) {
+                $fg = $t->fieldgroup;
+                $templates->delete($t, true);
+                $fieldgroups->delete($fg, true);
+                $this->deletedTemplates[] = $templateJSON->name;
+            }
+        }
+    }
+
+    protected function deleteFields() {
+
+        $fields = wire('fields');
+
+        foreach ($this->fieldsJSON as $fieldJSON) {
+
+            $name = (!empty($this->prefix) && $fieldJSON->name[0] !== '~') ? $this->prefix . '_' . $fieldJSON->name : $fieldJSON->name;
+            $name = ($name[0] === '~') ? substr($name, 1) : $name;
+
+            $f = $fields->get($name);
+            $skip = isset($fieldJSON->prefab) && $fieldJSON->prefab === true;
+
+            if (isset($f->id) && $f->id && !$skip) {
+                self::removeFieldFromFieldgroups($f);
+                $fields->delete($f, true);
+                $this->deletedFields[] = $name;
+            }
+        }
+    }
+
+
+    protected static function removeFieldFromFieldgroups($field) {
+
+        $fieldgroups = wire('fieldgroups');
+
+        foreach ($fieldgroups as $fieldgroup) {
+
+            $fieldExists = $fieldgroup->has($field);
+
+            if ($fieldExists) {
+                $fieldgroup->remove($field);
+                $fieldgroup->save();
+            }
+        }
+    }
+
+
+    public static function applyAttributesOrDefaults($attributes, $page, $hasSelector) {
+        foreach ($attributes as $attr) {
+
+            // DRY some
+            $wire = isset($attr->fuel) ? wire($attr->fuel) : wire('pages');
+            $type = isset($attr->type) ? $attr->type : self::PROPERTY_TYPE_DEFAULT;
+            $name = $attr->name;
+            $value = $attr->value;
+
+            switch (true) {
+
+                // if 'selector' save the value as a selected page
+                case $type === self::PROPERTY_TYPE_SELECTOR:
+                    $page->set($name, $wire->get($value));
+                    $hasSelector = true;
+                    break;
+
+                // if 'selector_id' save the value as id of a selected page
+                case $type === self::PROPERTY_TYPE_SELECTOR_ID:
+                    $page->set($name, $wire->get($value)->id);
+                    $hasSelector = true;
+                    break;
+
+                // just save the value as is
+                default:
+                    $page->set($name, $value);
+                    break;
+            }
+
+        }
+        return $hasSelector;
     }
 
     /**
@@ -190,6 +347,32 @@ class Module {
         foreach ($this->pages as $page) {
             $page->save();
         }
+
+        // rerun field installation, because they may
+        // reference pages via selector that are created afterwards
+        // for example: for page fields
+        if ($this->fieldsHaveSelectors) {
+            $this->prepareFields();
+            foreach ($this->fields as $field) {
+                $field->save();
+            }
+        }
+    }
+
+    /**
+     * Delete everything
+     *
+     * @return void
+     **/
+    public function uninstall() {
+        // foreach ($this->dependencies as $dependency) {
+        //     $dependency->install();
+        // }
+
+        $this->deletePages();
+        $this->deleteTemplates();
+        $this->deleteFields();
+
     }
 
     /**

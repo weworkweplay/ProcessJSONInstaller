@@ -46,10 +46,12 @@
     "templates": [
         {
             "name": "home",
+            "prefab": true,
             "fields": ["sharing_tab", "sharing_title", "sharing_description", "sharing_image", "sharing_close_tab"]
         },
         {
             "name": "basic-page",
+            "prefab": true,
             "fields": ["sharing_tab", "sharing_title", "sharing_description", "sharing_image", "sharing_close_tab"]
         }
     ]

@@ -35,10 +35,12 @@
     "templates": [
         {
             "name": "home",
+            "prefab": true,
             "fields": ["seo_tab", "seo_meta_description", "seo_close_tab"]
         },
         {
             "name": "basic-page",
+            "prefab": true,
             "fields": ["seo_tab", "seo_meta_description", "seo_close_tab"]
         }
     ]
