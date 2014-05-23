@@ -60,21 +60,33 @@ class ProcessJSONInstaller extends Process {
     public function ___execute() {
         $table = wire('modules')->get('MarkupAdminDataTable');
         $url = wire('pages')->get('template=admin, name=' . self::pageName)->url;
+        $config = wire('config');
 
-        $table->headerRow(array(
+        $headerColumns = array(
             'name',
             'description',
-            'action',
             'action'
-        ));
+        );
+
+        if ($config->advanced) {
+            $headerColumns[] = 'action';
+        }
+
+        $table->headerRow($headerColumns);
 
         foreach($this->installableModules as $key => $module) {
-            $table->row(array(
+
+            $contentColumns = array(
                 $module->name,
                 $module->description,
-                'Install' => 'install/' . $key,
-                'Uninstall' => 'uninstall/' . $key
-            ));
+                'Install' => 'install/' . $key
+            );
+
+            if ($config->advanced) {
+                $contentColumns['Uninstall'] = 'uninstall/' . $key;
+            }
+
+            $table->row($contentColumns);
         }
 
         $table->action(array('Export site' => $url . 'export/'));
