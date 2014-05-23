@@ -1,5 +1,7 @@
+<h2><?php echo $headline?></h2>
+
 <?php if (!empty($installedFields)): ?>
-	<h2>Created or edited fields</h2>
+	<h3>Created or edited fields</h3>
 	<ul class="json-installer-list">
 		<?php foreach ($installedFields as $installedField): ?>
 
@@ -10,7 +12,7 @@
 <?php endif ?>
 
 <?php if (!empty($installedTemplates)): ?>
-	<h2>Created or edited templates</h2>
+	<h3>Created or edited templates</h3>
 	<ul class="json-installer-list">
 		<?php foreach ($installedTemplates as $installedTemplate): ?>
 
@@ -21,11 +23,11 @@
 <?php endif ?>
 
 <?php if (!empty($installedPages)): ?>
-	<h2>Created or edited pages</h2>
+	<h3>Created or edited pages</h3>
 	<ul class="json-installer-list">
 		<?php foreach ($installedPages as $installedPage): ?>
 
-			<li><?php echo $installedPage->name?></li>
+			<li><code><?php echo $installedPage->url?></code></li>
 
 		<?php endforeach ?>
 	</ul>

@@ -208,7 +208,10 @@ class Module {
         }
     }
 
-    protected function deletePages() {
+    protected function deletePages($dryRun = false) {
+
+        // empty array, for running this method more than once
+        $this->deletedPages = array();
 
         // uninstall order must be reverse of install order
         $pagesJSONReversed = array_reverse($this->pagesJSON);
@@ -219,14 +222,25 @@ class Module {
 
             if (isset($p->id) && $p->id) {
                 $url = $p->url();
-                $p->delete();
+                if (!$dryRun) {
+                    $p->delete();
+                }
                 $this->deletedPages[] = $url;
 
             }
         }
     }
 
-    protected function deleteTemplates() {
+    /**
+     * deletes all templates defined in this module, which are not marked as "prefab"
+     *
+     * @param  boolean $dryRun when true, nothing gets deleted
+     * @return void
+     **/
+    protected function deleteTemplates($dryRun = false) {
+
+        // empty array, for running this method more than once
+        $this->deletedTemplates = array();
 
         $templates = wire('templates');
         $fieldgroups = wire('fieldgroups');
@@ -237,15 +251,26 @@ class Module {
             $skip = isset($templateJSON->prefab) && $templateJSON->prefab === true;
 
             if (isset($t) && $t->id && !$skip) {
-                $fg = $t->fieldgroup;
-                $templates->delete($t, true);
-                $fieldgroups->delete($fg, true);
+                if (!$dryRun) {
+                    $fg = $t->fieldgroup;
+                    $templates->delete($t, true);
+                    $fieldgroups->delete($fg, true);
+                }
                 $this->deletedTemplates[] = $templateJSON->name;
             }
         }
     }
 
-    protected function deleteFields() {
+    /**
+     * deletes all fields defined in this module, which are not marked as "prefab"
+     *
+     * @param  boolean $dryRun when true, nothing gets deleted
+     * @return void
+     **/
+    protected function deleteFields($dryRun = false) {
+
+        // empty array, for running this method more than once
+        $this->deletedFields = array();
 
         $fields = wire('fields');
 
@@ -258,13 +283,25 @@ class Module {
             $skip = isset($fieldJSON->prefab) && $fieldJSON->prefab === true;
 
             if (isset($f->id) && $f->id && !$skip) {
-                self::removeFieldFromFieldgroups($f);
-                $fields->delete($f, true);
+                if (!$dryRun) {
+                    self::removeFieldFromFieldgroups($f);
+                    $fields->delete($f, true);
+                }
                 $this->deletedFields[] = $name;
             }
         }
     }
 
+    /**
+     * checks if either "deletedPages", "deletedTemplates" or "deletedFields"
+     * is not empty after a dryrun unistall process
+     *
+     * @return boolean
+     **/
+    public function hasDeletableItems() {
+        $this->uninstall($dryRun = true);
+        return !(empty($this->deletedPages) && empty($this->deletedTemplates) && empty($this->deletedFields));
+    }
 
     protected static function removeFieldFromFieldgroups($field) {
 
@@ -364,14 +401,14 @@ class Module {
      *
      * @return void
      **/
-    public function uninstall() {
+    public function uninstall($dryRun = false) {
         // foreach ($this->dependencies as $dependency) {
         //     $dependency->install();
         // }
 
-        $this->deletePages();
-        $this->deleteTemplates();
-        $this->deleteFields();
+        $this->deletePages($dryRun);
+        $this->deleteTemplates($dryRun);
+        $this->deleteFields($dryRun);
 
     }
 
