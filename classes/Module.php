@@ -11,9 +11,9 @@ use \Page;
 
 class Module {
 
-    const PROPERTY_TYPE_SELECTOR = "selector";
-    const PROPERTY_TYPE_SELECTOR_ID = "selector_id";
-    const PROPERTY_TYPE_DEFAULT = "default";
+    const PROPERTY_TYPE_SELECTOR = 'selector';
+    const PROPERTY_TYPE_SELECTOR_ID = 'selector_id';
+    const PROPERTY_TYPE_DEFAULT = 'default';
 
     public $name;
     public $description;
@@ -120,7 +120,7 @@ class Module {
 
             // only save if selector is present
             // see description in preparePages()
-            if($hasSelector) {
+            if ($hasSelector) {
                 $t->save();
             }
 
@@ -150,13 +150,13 @@ class Module {
 
             // apply attributes and determine if selectors are used
             $hasSelector = self::applyAttributesOrDefaults($attributes, $f, $hasSelector);
-            if($hasSelector) {
+            if ($hasSelector) {
                 $this->fieldsHaveSelectors = true;
             }
 
             // only save if selector is present
             // see description in preparePages()
-            if($hasSelector) {
+            if ($hasSelector) {
                 $f->save();
             }
 
@@ -200,7 +200,7 @@ class Module {
             // saving is necessary if pages in the same loop are referencing
             // each other via selector, since selecting a not yet
             // existing/saved page would not work
-            if($hasSelector) {
+            if ($hasSelector) {
                 $p->save();
             }
 
@@ -218,7 +218,7 @@ class Module {
             // TODO: could cause trouble since a page name is not unique
             $p = wire('pages')->get('name=' . $pageJSON->name);
 
-            if(isset($p->id) && $p->id) {
+            if (isset($p->id) && $p->id) {
                 $url = $p->url();
                 $p->delete();
                 $this->deletedPages[] = $url;
@@ -237,7 +237,7 @@ class Module {
             $t = $templates->get($templateJSON->name);
             $skip = isset($templateJSON->prefab) && $templateJSON->prefab === true;
 
-            if(isset($t) && $t->id && !$skip) {
+            if (isset($t) && $t->id && !$skip) {
                 $fg = $t->fieldgroup;
                 $templates->delete($t, true);
                 $fieldgroups->delete($fg, true);
@@ -258,7 +258,7 @@ class Module {
             $f = $fields->get($name);
             $skip = isset($fieldJSON->prefab) && $fieldJSON->prefab === true;
 
-            if(isset($f->id) && $f->id && !$skip) {
+            if (isset($f->id) && $f->id && !$skip) {
                 self::removeFieldFromFieldgroups($f);
                 $fields->delete($f, true);
                 $this->deletedFields[] = $name;
@@ -269,13 +269,13 @@ class Module {
 
     protected static function removeFieldFromFieldgroups($field) {
 
-        $fieldgroups = wire("fieldgroups");
+        $fieldgroups = wire('fieldgroups');
 
         foreach ($fieldgroups as $fieldgroup) {
 
             $fieldExists = $fieldgroup->has($field);
 
-            if($fieldExists) {
+            if ($fieldExists) {
                 $fieldgroup->remove($field);
                 $fieldgroup->save();
             }
@@ -287,20 +287,20 @@ class Module {
         foreach ($attributes as $attr) {
 
             // DRY some
-            $wire = isset($attr->fuel) ? wire($attr->fuel) : wire("pages");
+            $wire = isset($attr->fuel) ? wire($attr->fuel) : wire('pages');
             $type = isset($attr->type) ? $attr->type : self::PROPERTY_TYPE_DEFAULT;
             $name = $attr->name;
             $value = $attr->value;
 
             switch (true) {
 
-                // if "selector" save the value as a selected page
+                // if 'selector' save the value as a selected page
                 case $type === self::PROPERTY_TYPE_SELECTOR:
                     $page->set($name, $wire->get($value));
                     $hasSelector = true;
                     break;
 
-                // if "selector_id" save the value as id of a selected page
+                // if 'selector_id' save the value as id of a selected page
                 case $type === self::PROPERTY_TYPE_SELECTOR_ID:
                     $page->set($name, $wire->get($value)->id);
                     $hasSelector = true;
@@ -352,7 +352,7 @@ class Module {
         // rerun field installation, because they may
         // reference pages via selector that are created afterwards
         // for example: for page fields
-        if($this->fieldsHaveSelectors) {
+        if ($this->fieldsHaveSelectors) {
             $this->prepareFields();
             foreach ($this->fields as $field) {
                 $field->save();

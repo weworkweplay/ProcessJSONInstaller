@@ -54,12 +54,12 @@ class ProcessJSONInstaller extends Process {
     public function init() {
         parent::init(); // required
         $this->loadModules();
-        $this->templatePath = dirname(__FILE__) . "/templates";
+        $this->templatePath = dirname(__FILE__) . '/templates';
     }
 
     public function ___execute() {
-        $table = wire('modules')->get("MarkupAdminDataTable");
-        $url = wire('pages')->get("template=admin, name=" . self::pageName)->url;
+        $table = wire('modules')->get('MarkupAdminDataTable');
+        $url = wire('pages')->get('template=admin, name=' . self::pageName)->url;
 
         $table->headerRow(array(
             'name',
@@ -93,7 +93,7 @@ class ProcessJSONInstaller extends Process {
             while (($file = readdir($dh)) !== false) {
                 if ($file === '.' || $file === '..' || $file === '.DS_Store') continue;
 
-                if(!is_file($actualDir . '/' . $file)) {
+                if (!is_file($actualDir . '/' . $file)) {
                     if ($file !== '.git') {
                         $this->addFolderToZip($actualDir . '/' . $file, $zip);
                     }
@@ -149,9 +149,9 @@ class ProcessJSONInstaller extends Process {
 
         $file = $this->buildZipArchive();
 
-        header("Content-Type: application/zip");
-        header("Content-Transfer-Encoding: Binary");
-        header("Content-disposition: attachment; filename=\"export-" . $filename . "-" . date('Ymd') . ".zip" . "\"");
+        header('Content-Type: application/zip');
+        header('Content-Transfer-Encoding: Binary');
+        header('Content-disposition: attachment; filename="export-' . $filename . '-' . date('Ymd') . '.zip' . '"');
         readfile($file);
     }
 
@@ -190,7 +190,7 @@ class ProcessJSONInstaller extends Process {
         try {
             $module = $this->installModule(wire('input')->urlSegment(2));
         } catch (WireException $e) {
-            header('Location:' . wire('pages')->get("template=admin, name=" . self::pageName)->url);
+            header('Location:' . wire('pages')->get('template=admin, name=' . self::pageName)->url);
         }
 
         $this->message('Succesfully installed or updated ' . $module->name);
@@ -199,12 +199,12 @@ class ProcessJSONInstaller extends Process {
 
         $this->breadcrumbs->add(new Breadcrumb('../', 'JSONInstaller Installer'));
 
-        $outputTemplatePath = $this->templatePath . "/install.php";
+        $outputTemplatePath = $this->templatePath . '/install.php';
         $outputTemplate = new TemplateFile($outputTemplatePath);
         $outputTemplate->setArray(array(
-            "installedFields" => $module->fields,
-            "installedTemplates" => $module->templates,
-            "installedPages" => $module->pages
+            'installedFields' => $module->fields,
+            'installedTemplates' => $module->templates,
+            'installedPages' => $module->pages
         ));
 
         return $outputTemplate->render();
@@ -218,7 +218,7 @@ class ProcessJSONInstaller extends Process {
 
         $this->breadcrumbs->add(new Breadcrumb('../', 'JSONInstaller Uninstaller'));
 
-        $outputTemplatePath = $this->templatePath . "/uninstall.php";
+        $outputTemplatePath = $this->templatePath . '/uninstall.php';
         $outputTemplate = new TemplateFile($outputTemplatePath);
 
         try {
@@ -228,12 +228,12 @@ class ProcessJSONInstaller extends Process {
             Wire::setFuel('processHeadline', 'Uninstalling ' . $module->name);
 
             $outputTemplate->setArray(array(
-                "deletedFields" => $module->deletedFields,
-                "deletedTemplates" => $module->deletedTemplates,
-                "deletedPages" => $module->deletedPages
+                'deletedFields' => $module->deletedFields,
+                'deletedTemplates' => $module->deletedTemplates,
+                'deletedPages' => $module->deletedPages
             ));
 
-            if(empty($module->deletedPages) && empty($module->deletedTemplates) && empty($module->deletedFields)) {
+            if (empty($module->deletedPages) && empty($module->deletedTemplates) && empty($module->deletedFields)) {
                 $this->message('Nothing to uninstall for ' . $module->name);
             } else {
                 $this->message('Uninstalled ' . $module->name);
