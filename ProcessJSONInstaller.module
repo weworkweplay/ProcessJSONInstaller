@@ -33,6 +33,7 @@ class ProcessJSONInstaller extends Process {
     }
 
     const pageName = 'json-installer';
+    const confirmParam = 'confirm';
 
     /**
      * Array containing all installable modules
@@ -91,7 +92,7 @@ class ProcessJSONInstaller extends Process {
 
             if ($config->advanced) {
                 if ($module->hasDeletableItems($forceDryRun = true)) {
-                    $contentColumns['Uninstall'] = 'confirmuninstall/' . $key;
+                    $contentColumns['Uninstall'] = 'uninstall/' . $key . '/' . self::confirmParam;
                 } else {
                     $contentColumns[] = 'n/a';
                 }
@@ -237,12 +238,13 @@ class ProcessJSONInstaller extends Process {
 
         $this->fuel->set('processHeadline', $headline);
 
-        $this->breadcrumbs->add(new Breadcrumb('../', self::$moduleInfo['title']));
+        $this->breadcrumbs->add(new Breadcrumb($this->url, self::$moduleInfo['title']));
 
         $outputTemplate= self::getTemplate('install');
         $outputTemplate->setArray(array(
             'headline' => $headline,
             'installedFields' => $module->fields,
+            'installedDependencies' => $module->installedDependencies,
             'installedTemplates' => $module->templates,
             'installedPages' => $module->pages
         ));
@@ -256,39 +258,45 @@ class ProcessJSONInstaller extends Process {
      */
     public function ___executeUninstall() {
 
-        $this->breadcrumbs->add(new Breadcrumb('../', self::$moduleInfo['title']));
+        $name = $this->input->urlSegment(2);
+        $confirm = $this->input->urlSegment(3);
 
-        $outputTemplate= self::getTemplate('uninstall');
+        if($confirm === self::confirmParam) {
+            return $this->confirmUninstall();
+        } else {
+            $this->breadcrumbs->add(new Breadcrumb($this->url, self::$moduleInfo['title']));
 
-        try {
+            $outputTemplate= self::getTemplate('uninstall');
 
-            $module = $this->uninstallModule($this->input->urlSegment(2));
+            try {
 
-            $headline = 'Uninstalled ' . $module->name;
+                $module = $this->uninstallModule($this->input->urlSegment(2));
 
-            $this->fuel->set('processHeadline', $headline);
+                $headline = 'Uninstalled ' . $module->name;
 
-            $outputTemplate->setArray(array(
-                'headline' => $headline,
-                'deletedFields' => $module->deletedFields,
-                'deletedTemplates' => $module->deletedTemplates,
-                'deletedPages' => $module->deletedPages
-            ));
+                $this->fuel->set('processHeadline', $headline);
 
-        } catch (WireException $e) {
-            $this->error($e->getMessage());
+                $outputTemplate->setArray(array(
+                    'headline' => $headline,
+                    'deletedFields' => $module->deletedFields,
+                    'deletedTemplates' => $module->deletedTemplates,
+                    'deletedPages' => $module->deletedPages
+                ));
+
+            } catch (WireException $e) {
+                $this->error($e->getMessage());
+            }
+
+            return $outputTemplate->render();
         }
-
-        return $outputTemplate->render();
-
     }
 
     /**
      * Called when the URL is this module's page URL + "/confirmuninstall/?:name/"
      */
-    public function ___executeConfirmUninstall() {
+    protected function ___confirmUninstall() {
 
-        $this->breadcrumbs->add(new Breadcrumb('../', self::$moduleInfo['title']));
+        $this->breadcrumbs->add(new Breadcrumb($this->url, self::$moduleInfo['title']));
 
         $name = $this->input->urlSegment(2);
 

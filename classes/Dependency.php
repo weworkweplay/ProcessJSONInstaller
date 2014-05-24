@@ -6,6 +6,9 @@ class Dependency {
     public $name;
     public $zip;
     public $core = false;
+    public $json = false; // not implemented yet
+    public $skipped = false; // not implemented yet
+    public $force = false; // not implemented yet
 
     private $installDir = '../modules/';
 
@@ -39,6 +42,8 @@ class Dependency {
         if ($module = $modules->get($this->name)) {
             try {
                 if (is_callable(array($module, 'install'))) {
+                    // TODO: $module->install() does not return anything, hence "null"
+                    // so Dependency::install returns false, although module is installed
                     $success = $module->install();
                 }
             } catch (WireException $e) {

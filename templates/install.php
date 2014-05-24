@@ -1,5 +1,16 @@
 <h2><?php echo $headline?></h2>
 
+<?php if (!empty($installedDependencies)): ?>
+	<h3>Installed dependencies</h3>
+	<ul class="json-installer-list">
+		<?php foreach ($installedDependencies as $installedDependency): ?>
+
+			<li><code><?php echo $installedDependency->name?></code></li>
+
+		<?php endforeach ?>
+	</ul>
+<?php endif ?>
+
 <?php if (!empty($installedFields)): ?>
 	<h3>Created or edited fields</h3>
 	<ul class="json-installer-list">

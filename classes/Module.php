@@ -21,6 +21,7 @@ class Module {
 
     /* Dependencies to install this module */
     public $dependencies;
+    public $installedDependencies;
 
     /* Things installing this module will create */
     public $fields;
@@ -69,6 +70,8 @@ class Module {
                 $d->name = $dependencyJSON->name;
                 $d->zip = (isset($dependencyJSON->zip)) ? $dependencyJSON->zip : '';
                 $d->core = (isset($dependencyJSON->core)) ? (bool) $dependencyJSON->core : false;
+                $d->json = (isset($dependencyJSON->json)) ? (bool) $dependencyJSON->json : false;
+                $d->force = (isset($dependencyJSON->force)) ? (bool) $dependencyJSON->force : false;
 
                 $module->dependencies[] = $d;
             }
@@ -80,10 +83,10 @@ class Module {
 
         return $module;
     }
-    
+
     /**
      * prepares the templates
-     * 
+     *
      * @return void
      */
     protected function prepareTemplates() {
@@ -171,6 +174,19 @@ class Module {
             }
 
             $this->fields[] = $f;
+        }
+    }
+
+    /**
+     * installs dependencies
+     *
+     * @return void
+     */
+    protected function installDependencies() {
+        foreach ($this->dependencies as $dependency) {
+            if ($dependency->install()) {
+                $this->installedDependencies[] = $dependency;
+            }
         }
     }
 
@@ -385,9 +401,8 @@ class Module {
      * @return void
      **/
     public function install() {
-        foreach ($this->dependencies as $dependency) {
-            $dependency->install();
-        }
+
+        $this->installDependencies();
 
         $this->prepareFields();
 
