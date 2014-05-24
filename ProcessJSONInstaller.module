@@ -28,24 +28,24 @@ class ProcessJSONInstaller extends Process {
         'permission' => 'page-edit',
     );
 
-
-
     public static function getModuleInfo() {
         return self::$moduleInfo;
     }
 
     const pageName = 'json-installer';
-    const breadCrumbTitle = 'JSON222 Installer';
 
     /**
      * Array containing all installable modules
      */
     protected $installableModules;
-    protected $templatePath;
+
+    /**
+     * The base URL for the module
+     */
     protected $url;
 
     private function loadModules() {
-        $dir = wire('config')->paths->siteModules . get_class() . DIRECTORY_SEPARATOR . 'modules';
+        $dir = $this->config->paths->siteModules . get_class() . DIRECTORY_SEPARATOR . 'modules';
         $tmp = scandir($dir);
         $this->installableModules = array();
 
@@ -60,13 +60,12 @@ class ProcessJSONInstaller extends Process {
     public function init() {
         parent::init(); // required
         $this->loadModules();
-        $this->templatePath = dirname(__FILE__) . '/templates';
         $this->url = wire('pages')->get('template=admin, name=' . self::pageName)->url;
     }
 
     public function ___execute() {
-        $table = wire('modules')->get('MarkupAdminDataTable');
-        $config = wire('config');
+        $table = $this->modules->get('MarkupAdminDataTable');
+        $config = $this->config;
 
         $headerColumns = array(
             'name',
@@ -89,7 +88,7 @@ class ProcessJSONInstaller extends Process {
             );
 
             if ($config->advanced) {
-                if ($module->hasDeletableItems()) {
+                if ($module->hasDeletableItems($forceDryRun = true)) {
                     $contentColumns['Uninstall'] = 'confirmuninstall/' . $key;
                 } else {
                     $contentColumns[] = 'n/a';
@@ -132,11 +131,11 @@ class ProcessJSONInstaller extends Process {
         $directories = array('site/install', 'site/modules', 'site/templates');
         $zip = new ZipArchive();
 
-        $filePath = wire('config')->paths->root . 'site/assets/site-export-' . date('Y-m-d') . '.zip';
+        $filePath = $this->config->paths->root . 'site/assets/site-export-' . date('Y-m-d') . '.zip';
 
         if ($zip->open($filePath, ZipArchive::CREATE) === TRUE) {
             foreach ($directories as $dir) {
-                $this->addFolderToZip(wire('config')->paths->root . $dir, $zip);
+                $this->addFolderToZip($this->config->paths->root . $dir, $zip);
             }
 
             $zip->close();
@@ -146,7 +145,7 @@ class ProcessJSONInstaller extends Process {
     }
 
     public function ___executeExport() {
-        $export = wire('modules')->get('ProcessExportProfile');
+        $export = $this->modules->get('ProcessExportProfile');
 
         if (!$export) {
             $this->error('You need the ProcessExportProfile module for this.');
@@ -206,7 +205,7 @@ class ProcessJSONInstaller extends Process {
         return $module;
     }
 
-    public function confirmModuleUninstallation($name) {
+    public function dryRunModuleUninstallation($name) {
         $this->loadModules();
 
         $module = $this->installableModules[$name];
@@ -215,7 +214,7 @@ class ProcessJSONInstaller extends Process {
             throw new WireException();
         }
 
-        $module->uninstall();
+        $module->uninstall($dryRun = true);
 
         return $module;
     }
@@ -225,21 +224,20 @@ class ProcessJSONInstaller extends Process {
      */
     public function ___executeInstall() {
         try {
-            $module = $this->installModule(wire('input')->urlSegment(2));
+            $module = $this->installModule($this->input->urlSegment(2));
         } catch (WireException $e) {
             header('Location:' . wire('pages')->get('template=admin, name=' . self::pageName)->url);
         }
 
         $this->message('Succesfully installed or updated ' . $module->name);
 
-        $headline = 'Installing ' . $module->name;
+        $headline = 'Installed ' . $module->name;
 
-        Wire::setFuel('processHeadline', $headline);
+        $this->fuel->set('processHeadline', $headline);
 
         $this->breadcrumbs->add(new Breadcrumb('../', self::$moduleInfo['title']));
 
-        $outputTemplatePath = $this->templatePath . '/install.php';
-        $outputTemplate = new TemplateFile($outputTemplatePath);
+        $outputTemplate= self::getTemplate('install');
         $outputTemplate->setArray(array(
             'headline' => $headline,
             'installedFields' => $module->fields,
@@ -258,16 +256,15 @@ class ProcessJSONInstaller extends Process {
 
         $this->breadcrumbs->add(new Breadcrumb('../', self::$moduleInfo['title']));
 
-        $outputTemplatePath = $this->templatePath . '/uninstall.php';
-        $outputTemplate = new TemplateFile($outputTemplatePath);
+        $outputTemplate= self::getTemplate('uninstall');
 
         try {
 
-            $module = $this->uninstallModule(wire('input')->urlSegment(2));
+            $module = $this->uninstallModule($this->input->urlSegment(2));
 
-            $headline = 'Uninstalling ' . $module->name;
+            $headline = 'Uninstalled ' . $module->name;
 
-            Wire::setFuel('processHeadline', $headline);
+            $this->fuel->set('processHeadline', $headline);
 
             $outputTemplate->setArray(array(
                 'headline' => $headline,
@@ -285,53 +282,39 @@ class ProcessJSONInstaller extends Process {
     }
 
     /**
-     * Called when the URL is this module's page URL + "/confirm-uninstall/?:name/"
+     * Called when the URL is this module's page URL + "/confirmuninstall/?:name/"
      */
     public function ___executeConfirmUninstall() {
 
-        $out = '';
-
         $this->breadcrumbs->add(new Breadcrumb('../', self::$moduleInfo['title']));
 
-        $this->loadModules();
-        $name = wire('input')->urlSegment(2);
+        $name = $this->input->urlSegment(2);
 
-        $module = $this->installableModules[$name];
-
-        if (empty($module)) {
-            throw new WireException();
-        }
-
-        $module->uninstall($dryRun = true);
-
-        $outputTemplatePath = $this->templatePath . '/confirm-uninstall.php';
-        $outputTemplate = new TemplateFile($outputTemplatePath);
+        $module = $this->dryRunModuleUninstallation($name);
 
         $headline = 'Confirm uninstallation of ' . $module->name;
-        $notInstalledYet = !$module->hasDeletableItems();
+        $isNotInstalledYet = !$module->hasDeletableItems($forceDryRun = false);
 
-        Wire::setFuel('processHeadline', $headline);
+        $this->fuel->set('processHeadline', $headline);
 
-        if (!$notInstalledYet) {
-            $this->error('Warning: This feature is experimental.');
+        if (!$isNotInstalledYet) {
+            $this->error('This feature is experimental.');
             $this->error('The uninstall process will try to delete all pages, templates and fields defined in this module json, so if you included directives to merely modify existing pages, templates or fields, you should add a "prefab" property to each of those and set it to "true".');
         }
 
-
-
+        $outputTemplate= self::getTemplate('confirm-uninstall');
         $outputTemplate->setArray(array(
             'headline' => $headline,
             'deletedFields' => $module->deletedFields,
             'deletedTemplates' => $module->deletedTemplates,
             'deletedPages' => $module->deletedPages,
-            'notInstalledYet' => $notInstalledYet
+            'isNotInstalledYet' => $isNotInstalledYet
         ));
 
-        $out .= $outputTemplate->render();
+        $out = $outputTemplate->render();
 
-        if (!$notInstalledYet) {
+        if (!$isNotInstalledYet) {
             $button = $this->modules->get('InputfieldButton');
-            // $button->href = wire('pages')->get('template=admin, name=' . self::pageName)->url . '/' . $name;
             $button->href = $this->url . 'uninstall/' . $name;
             $button->value = 'Confirm';
 
@@ -339,7 +322,6 @@ class ProcessJSONInstaller extends Process {
         }
 
         return $out;
-
     }
 
     public function ___install() {
@@ -365,5 +347,10 @@ class ProcessJSONInstaller extends Process {
             $this->message('Deleting Page: ' . $page->path);
             $page->delete();
         }
+    }
+
+    protected static function getTemplate($templateName) {
+        $file = dirname(__FILE__) . '/templates/' . $templateName . '.php';
+        return new TemplateFile($file);
     }
 }

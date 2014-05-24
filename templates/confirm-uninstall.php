@@ -34,7 +34,7 @@
 	</ul>
 <?php endif ?>
 
-<?php if ($notInstalledYet): ?>
+<?php if ($isNotInstalledYet): ?>
 <p>This module does not seem to be installed yet.</p>
 <p><a href="../">Go Back</a></p>
 <?php endif ?>

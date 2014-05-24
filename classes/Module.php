@@ -80,7 +80,12 @@ class Module {
 
         return $module;
     }
-
+    
+    /**
+     * prepares the templates
+     * 
+     * @return void
+     */
     protected function prepareTemplates() {
         foreach ($this->templatesJSON as $templateJSON) {
             $t = wire('templates')->get($templateJSON->name);
@@ -128,6 +133,11 @@ class Module {
         }
     }
 
+    /**
+     * prepares the fields
+     *
+     * @return void
+     */
     protected function prepareFields() {
         foreach ($this->fieldsJSON as $fieldJSON) {
             $name = (!empty($this->prefix) && $fieldJSON->name[0] !== '~') ? $this->prefix . '_' . $fieldJSON->name : $fieldJSON->name;
@@ -164,9 +174,14 @@ class Module {
         }
     }
 
+    /**
+     * prepares the pages
+     *
+     * @return void
+     */
     protected function preparePages() {
         foreach ($this->pagesJSON as $pageJSON) {
-            $p = wire('pages')->get('name=' . $pageJSON->name);
+            $p = wire('pages')->get('name=' . $pageJSON->name . ',template=' . $pageJSON->template);
             $attributes = (!empty($pageJSON->attributes)) ? $pageJSON->attributes : array();
             $defaults = (!empty($pageJSON->defaults)) ? $pageJSON->defaults : array();
             $hasSelector = false;
@@ -208,6 +223,12 @@ class Module {
         }
     }
 
+    /**
+     * deletes all pages defined in this module, which are not marked as "prefab"
+     *
+     * @param  boolean $dryRun when true, nothing gets deleted
+     * @return void
+     **/
     protected function deletePages($dryRun = false) {
 
         // empty array, for running this method more than once
@@ -218,7 +239,7 @@ class Module {
 
         foreach ($pagesJSONReversed as $pageJSON) {
 
-            $p = wire('pages')->get('name=' . $pageJSON->name .',template=' . $pageJSON->template);
+            $p = wire('pages')->get('name=' . $pageJSON->name . ',template=' . $pageJSON->template);
 
             if (isset($p->id) && $p->id) {
                 $url = $p->url();
@@ -293,13 +314,19 @@ class Module {
     }
 
     /**
-     * checks if either "deletedPages", "deletedTemplates" or "deletedFields"
-     * is not empty after a dryrun unistall process
+     * checks if either of "deletedPages", "deletedTemplates" or "deletedFields"
+     * is not empty after a dry run unistall process
      *
+     * @param  boolean $forceDryRun it forces the dry run to collect the deleted items,
+     * which is not always necessary if a dry run has been called from outside already
      * @return boolean
      **/
-    public function hasDeletableItems() {
-        $this->uninstall($dryRun = true);
+    public function hasDeletableItems($forceDryRun = false) {
+
+        if($forceDryRun) {
+            $this->uninstall($dryRun = true);
+        }
+
         return !(empty($this->deletedPages) && empty($this->deletedTemplates) && empty($this->deletedFields));
     }
 
@@ -397,14 +424,12 @@ class Module {
     }
 
     /**
-     * Delete everything
+     * Delete everything, but dependecies (modules)
      *
+     * @param  boolean $dryRun if true, it performs a dry run and does not delete anything
      * @return void
-     **/
+     */
     public function uninstall($dryRun = false) {
-        // foreach ($this->dependencies as $dependency) {
-        //     $dependency->install();
-        // }
 
         $this->deletePages($dryRun);
         $this->deleteTemplates($dryRun);
