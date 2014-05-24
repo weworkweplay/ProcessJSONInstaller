@@ -69,12 +69,14 @@ class ProcessJSONInstaller extends Process {
 
         $headerColumns = array(
             'name',
-            'description',
-            'install'
+            'description'
         );
 
         if ($config->advanced) {
+            $headerColumns[] = 'install';
             $headerColumns[] = 'uninstall';
+        } else {
+            $headerColumns[] = 'action';
         }
 
         $table->headerRow($headerColumns);
