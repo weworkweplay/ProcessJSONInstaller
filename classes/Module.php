@@ -40,6 +40,22 @@ class Module {
     public $templatesJSON;
     public $pagesJSON;
 
+    /**
+     * yields the slug like "some-module", same as filename
+     * TODO: it's would be more consistent if this property was calles $name
+     * and the current $name property would be renamed to $title, like in PW
+     * @var string
+     */
+    public $slug;
+
+    /**
+     * Assoc array to keep track of modules installed in one go.
+     * Important when modules reference other modules as dependencies
+     * to prevent circular references and to provide complete output for the user
+     * @var assoc array
+     */
+    public static $installedModules;
+
     public function __construct() {
         $this->dependencies = array();
 
@@ -50,6 +66,11 @@ class Module {
         $this->deletedFields = array();
         $this->deletedTemplates = array();
         $this->deletedPages = array();
+
+        // only create once for all instances
+        if (self::$installedModules === null) {
+            self::$installedModules = array();
+        }
     }
 
     /**
@@ -402,6 +423,12 @@ class Module {
      **/
     public function install() {
 
+        if (isset(self::$installedModules[$this->slug])) {
+            return;
+        }
+
+        self::$installedModules[$this->slug] = $this;
+
         $this->installDependencies();
 
         $this->prepareFields();
@@ -436,6 +463,7 @@ class Module {
                 $field->save();
             }
         }
+
     }
 
     /**

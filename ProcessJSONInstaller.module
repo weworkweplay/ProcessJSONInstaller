@@ -53,7 +53,10 @@ class ProcessJSONInstaller extends Process {
         foreach ($tmp as $file) {
             if (strpos($file, '.json') > 0) {
                 $json = json_decode(file_get_contents($dir . DIRECTORY_SEPARATOR . $file));
-                $this->installableModules[substr($file, 0, -5)] = JSONInstaller\Module::createFromJSON($json);
+                $slug = substr($file, 0, -5);
+                $module = JSONInstaller\Module::createFromJSON($json);
+                $module->slug = $slug;
+                $this->installableModules[$slug] = $module;
             }
         }
     }
@@ -263,32 +266,33 @@ class ProcessJSONInstaller extends Process {
 
         if($confirm === self::confirmParam) {
             return $this->confirmUninstall();
-        } else {
-            $this->breadcrumbs->add(new Breadcrumb($this->url, self::$moduleInfo['title']));
-
-            $outputTemplate= self::getTemplate('uninstall');
-
-            try {
-
-                $module = $this->uninstallModule($this->input->urlSegment(2));
-
-                $headline = 'Uninstalled ' . $module->name;
-
-                $this->fuel->set('processHeadline', $headline);
-
-                $outputTemplate->setArray(array(
-                    'headline' => $headline,
-                    'deletedFields' => $module->deletedFields,
-                    'deletedTemplates' => $module->deletedTemplates,
-                    'deletedPages' => $module->deletedPages
-                ));
-
-            } catch (WireException $e) {
-                $this->error($e->getMessage());
-            }
-
-            return $outputTemplate->render();
         }
+
+        $this->breadcrumbs->add(new Breadcrumb($this->url, self::$moduleInfo['title']));
+
+        $outputTemplate= self::getTemplate('uninstall');
+
+        try {
+
+            $module = $this->uninstallModule($this->input->urlSegment(2));
+
+            $headline = 'Uninstalled ' . $module->name;
+
+            $this->fuel->set('processHeadline', $headline);
+
+            $outputTemplate->setArray(array(
+                'headline' => $headline,
+                'deletedFields' => $module->deletedFields,
+                'deletedTemplates' => $module->deletedTemplates,
+                'deletedPages' => $module->deletedPages
+            ));
+
+        } catch (WireException $e) {
+            $this->error($e->getMessage());
+        }
+
+        return $outputTemplate->render();
+
     }
 
     /**
