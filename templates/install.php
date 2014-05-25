@@ -10,12 +10,12 @@
 			<?php foreach ($module->installedDependencies as $installedDependency): ?>
 
 				<li>
-					<code>
-						<?php echo $installedDependency->name?>
-						<?php if ($installedDependency->json): ?>
-							(<?php echo $installedDependency->json?>)
-						<?php endif ?>
-					</code>
+					<?php if ($installedDependency->slug): ?>
+						 <code><?php echo $installedDependency->slug?></code> -
+					<?php endif ?>
+					<?php if ($installedDependency->name): ?>
+						 <?php echo $installedDependency->name?>
+					<?php endif ?>
 				</li>
 
 			<?php endforeach ?>
@@ -27,7 +27,12 @@
 		<ul class="json-installer-list">
 			<?php foreach ($module->fields as $installedField): ?>
 
-				<li><code><?php echo $installedField->name?></code> - <?php echo $installedField->label?></li>
+				<li>
+					<code><?php echo $installedField->name?></code>
+					<?php if ($installedField->label): ?>
+						 - <?php echo $installedField->label?>
+					<?php endif ?>
+				</li>
 
 			<?php endforeach ?>
 		</ul>
@@ -38,7 +43,12 @@
 		<ul class="json-installer-list">
 			<?php foreach ($module->templates as $installedTemplate): ?>
 
-				<li><code><?php echo $installedTemplate->name?></code> - <?php echo $installedTemplate->label?></li>
+				<li>
+					<code><?php echo $installedTemplate->name?></code>
+					<?php if ($installedTemplate->label): ?>
+						 - <?php echo $installedTemplate->label?>
+					<?php endif ?>
+				</li>
 
 			<?php endforeach ?>
 		</ul>
@@ -49,7 +59,12 @@
 		<ul class="json-installer-list">
 			<?php foreach ($module->pages as $installedPage): ?>
 
-				<li><code><?php echo $installedPage->url?></code></li>
+				<li>
+					<code><?php echo $installedPage->url?></code>
+					<?php if ($installedPage->title): ?>
+						 - <?php echo $installedPage->title?>
+					<?php endif ?>
+				</li>
 
 			<?php endforeach ?>
 		</ul>

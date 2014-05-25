@@ -47,7 +47,7 @@ class Dependency {
      * Holding the module instance, if it's a dependency of type JSON
      * @var JSONInstaller\Module
      */
-    public $jsonModuleInstance;
+    protected $jsonModuleInstance;
 
     /**
      * The path to where the PW modules reside
@@ -62,6 +62,12 @@ class Dependency {
      * @var string
      */
     private $jsonDir;
+
+    /**
+     * The file name without extension
+     * @var string
+     */
+    protected $slug;
 
     public function __construct() {
         $this->jsonDir = dirname(__FILE__) . '/' . $this->installDir;
@@ -165,7 +171,21 @@ class Dependency {
             $slug = substr($this->json, 0, -5);
             $this->jsonModuleInstance = Module::createFromJSON($json);
             $this->jsonModuleInstance->slug = $slug;
+            $this->name = $this->jsonModuleInstance->name;
+            $this->slug = $slug;
             return $this->jsonModuleInstance;
         }
+    }
+
+    public function __get($key) {
+        if(isset($this->$key)) {
+            return $this->$key;
+        } else {
+            return '';
+        }
+    }
+
+    public function __set($key, $value) {
+        $this->$key = $value;
     }
 }

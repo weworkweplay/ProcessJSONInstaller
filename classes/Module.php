@@ -309,7 +309,7 @@ class Module {
                 if (!$dryRun) {
                     $p->delete();
                 }
-                $this->deletedPages[] = $url;
+                $this->deletedPages[] = $p;
 
             }
         }
@@ -340,7 +340,7 @@ class Module {
                     $templates->delete($t, true);
                     $fieldgroups->delete($fg, true);
                 }
-                $this->deletedTemplates[] = $templateJSON->name;
+                $this->deletedTemplates[] = $t;
             }
         }
     }
@@ -371,7 +371,7 @@ class Module {
                     self::removeFieldFromFieldgroups($f);
                     $fields->delete($f, true);
                 }
-                $this->deletedFields[] = $name;
+                $this->deletedFields[] = $f;
             }
         }
     }
@@ -394,7 +394,7 @@ class Module {
                 if (!$dryRun) {
                     $dependency->uninstall();
                 }
-                $this->uninstalledDependencies[] = $dependency->name;
+                $this->uninstalledDependencies[] = $dependency;
             }
         }
     }
