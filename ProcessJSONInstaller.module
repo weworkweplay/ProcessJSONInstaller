@@ -232,7 +232,8 @@ class ProcessJSONInstaller extends Process {
         try {
             $module = $this->installModule($this->input->urlSegment(2));
         } catch (WireException $e) {
-            header('Location:' . wire('pages')->get('template=admin, name=' . self::pageName)->url);
+            $this->error($e->getMessage());
+            return "";
         }
 
         $this->message('Succesfully installed or updated ' . $module->name);
