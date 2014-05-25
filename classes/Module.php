@@ -53,14 +53,14 @@ class Module {
      * Assoc array to keep track of modules installed in one go.
      * Important when modules reference other modules as dependencies
      * to prevent circular references and to provide complete output for the user
-     * @var assoc array
+     * @var array
      */
     public static $installedModules;
 
     /**
      * Assoc array to keep track of modules uninstalled in one go.
      * Important to provide complete output for the user
-     * @var assoc array
+     * @var array
      */
     public static $uninstalledModules;
     public static $dryRunUninstalledModules;
@@ -86,7 +86,7 @@ class Module {
         if (self::$uninstalledModules === null) {
             self::$uninstalledModules = array();
         }
-        
+
         // only create once for all instances
         if (self::$dryRunUninstalledModules === null) {
             self::$dryRunUninstalledModules = array();
@@ -114,6 +114,7 @@ class Module {
                 $d->json = (isset($dependencyJSON->json)) ? $dependencyJSON->json : '';
                 $d->force = (isset($dependencyJSON->force)) ? (bool) $dependencyJSON->force : false;
 
+                // TODO: this is not pretty
                 $alternateName = $d->json ? $d->json : $d->zip;
                 $d->name = (isset($dependencyJSON->name)) ? $dependencyJSON->name : $alternateName;
 
@@ -430,7 +431,14 @@ class Module {
         }
     }
 
-
+    /**
+     * Interates through the attributes and assigns their values to the given $page
+     *
+     * @param  array $attributes
+     * @param  Page $page
+     * @param  boolean $hasSelector
+     * @return boolean
+     */
     public static function applyAttributesOrDefaults($attributes, $page, $hasSelector) {
         foreach ($attributes as $attr) {
 
