@@ -324,7 +324,7 @@ class ProcessJSONInstaller extends Process {
         if (!$isNotInstalledYet) {
             $button = $this->modules->get('InputfieldButton');
             $button->href = $this->url . 'uninstall/' . $name;
-            $button->value = 'Confirm';
+            $button->value = 'Uninstall!';
 
             $out .= $button->render();
         }
