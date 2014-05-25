@@ -3,24 +3,73 @@
 namespace JSONInstaller;
 
 class Dependency {
+
+    /**
+     * The name of the module, should be equivalent to the modules class name
+     * @var string
+     */
     public $name;
+
+    /**
+     * The url/path to the zip file of the module
+     * @var string
+     */
     public $zip;
+
+    /**
+     * The file name of the json module
+     * @var string
+     */
     public $json;
+
+    /**
+     * Whether it's a core/preexisting module
+     * @var boolean
+     */
     public $core = false;
-    public $skipped = false; // not implemented yet
-    public $force = false; // not implemented yet
-    public $jsonModule;
 
-    protected $jsonModuleInstance;
+    /**
+     * Whether this module was skipped at un-/installation
+     * not implemented yet
+     * @var boolean
+     */
+    public $skipped = false;
 
-    // TODO: this is weird
+    /**
+     * Whether this module should be installed/downloaaded/unzipped
+     * regardless if it's already installed or not
+     * not implemented yet
+     * @var boolean
+     */
+    public $force = false;
+
+    /**
+     * Holding the module instance, if it's a dependency of type JSON
+     * @var JSONInstaller\Module
+     */
+    public $jsonModuleInstance;
+
+    /**
+     * The path to where the PW modules reside
+     * TODO: this is weird and unclear
+     * @var string
+     */
     private $installDir = '../modules/';
+
+    /**
+     * The path to where the json module files reside
+     * TODO: this is weird and unclear
+     * @var string
+     */
     private $jsonDir;
 
     public function __construct() {
         $this->jsonDir = dirname(__FILE__) . '/' . $this->installDir;
     }
 
+    /**
+     * @return boolean
+     */
     public function install() {
         $modules = wire('modules');
 
@@ -57,13 +106,15 @@ class Dependency {
         }
     }
 
+    /**
+     * @return boolean
+     */
     public function uninstall() {
 
         if ($this->json) {
             $module = $this->getJsonModuleInstance();
-            if($module->hasDeletableItems($forceDryRun = true)) {
+            if ($module->hasDeletableItems($forceDryRun = true)) {
                 $module->uninstall();
-                \ChromePhp::log($module->name, "uninstalled");
                 return true;
             }
             return false;
@@ -83,6 +134,9 @@ class Dependency {
         }
     }
 
+    /**
+     * @return boolean
+     */
     public function isInstalled() {
         if ($this->json) {
             $module = $this->getJsonModuleInstance();
@@ -92,8 +146,11 @@ class Dependency {
         }
     }
 
+    /**
+     * @return JSONInstaller\Module
+     */
     protected function getJsonModuleInstance() {
-        if($this->jsonModuleInstance) {
+        if ($this->jsonModuleInstance) {
             return $this->jsonModuleInstance;
         } else {
             $file = $this->jsonDir . $this->json;
@@ -103,6 +160,5 @@ class Dependency {
             $this->jsonModuleInstance->slug = $slug;
             return $this->jsonModuleInstance;
         }
-
     }
 }
