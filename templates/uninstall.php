@@ -1,36 +1,52 @@
 <h2><?php echo $headline?></h2>
 
-<?php if (!empty($deletedFields)): ?>
-	<h3>Deleted fields</h3>
-	<ul class="json-installer-list">
-		<?php foreach ($deletedFields as $deletedField): ?>
+<?php foreach ($modules as $slug => $module): ?>
 
-			<li><code><?php echo $deletedField?></code></li>
+	<hr class="json-installer-hr">
 
-		<?php endforeach ?>
-	</ul>
-<?php endif ?>
+	<?php if (!empty($module->uninstalledDependencies)): ?>
+		<h3>Uninstalled dependencies of <em><?php echo $module->name?></em></h3>
+		<ul class="json-installer-list">
+			<?php foreach ($module->uninstalledDependencies as $uninstalledDependency): ?>
 
-<?php if (!empty($deletedTemplates)): ?>
-	<h3>Deleted templates</h3>
-	<ul class="json-installer-list">
-		<?php foreach ($deletedTemplates as $deletedTemplate): ?>
+				<li><code><?php echo $uninstalledDependency?></code></li>
 
-			<li><code><?php echo $deletedTemplate?></code></li>
+			<?php endforeach ?>
+		</ul>
+	<?php endif ?>
 
-		<?php endforeach ?>
-	</ul>
-<?php endif ?>
+	<?php if (!empty($module->deletedFields)): ?>
+		<h3>Uninstalled fields of <em><?php echo $module->name?></em></h3>
+		<ul class="json-installer-list">
+			<?php foreach ($module->deletedFields as $deletedField): ?>
 
-<?php if (!empty($deletedPages)): ?>
-	<h3>Deleted pages</h3>
-	<ul class="json-installer-list">
-		<?php foreach ($deletedPages as $deletedPage): ?>
+				<li><code><?php echo $deletedField?></code></li>
 
-			<li><code><?php echo $deletedPage?></code></li>
+			<?php endforeach ?>
+		</ul>
+	<?php endif ?>
 
-		<?php endforeach ?>
-	</ul>
-<?php endif ?>
+	<?php if (!empty($module->deletedTemplates)): ?>
+		<h3>Uninstalled templates of <em><?php echo $module->name?></em></h3>
+		<ul class="json-installer-list">
+			<?php foreach ($module->deletedTemplates as $deletedTemplate): ?>
+
+				<li><code><?php echo $deletedTemplate?></code></li>
+
+			<?php endforeach ?>
+		</ul>
+	<?php endif ?>
+
+	<?php if (!empty($module->deletedPages)): ?>
+		<h3>Uninstalled pages of <em><?php echo $module->name?></em></h3>
+		<ul class="json-installer-list">
+			<?php foreach ($module->deletedPages as $deletedPage): ?>
+
+				<li><code><?php echo $deletedPage?></code></li>
+
+			<?php endforeach ?>
+		</ul>
+	<?php endif ?>
+<?php endforeach ?>
 
 <p><a href="../">Go Back</a></p>

@@ -5,26 +5,27 @@ namespace JSONInstaller;
 class Dependency {
     public $name;
     public $zip;
+    public $json;
     public $core = false;
-    public $json = false; // not implemented yet
     public $skipped = false; // not implemented yet
     public $force = false; // not implemented yet
+    public $jsonModule;
 
+    protected $jsonModuleInstance;
+
+    // TODO: this is weird
     private $installDir = '../modules/';
+    private $jsonDir;
 
     public function __construct() {
-
+        $this->jsonDir = dirname(__FILE__) . '/' . $this->installDir;
     }
 
     public function install() {
         $modules = wire('modules');
 
         if ($this->json && file_exists($this->jsonDir . $this->json)) {
-            $file = $this->jsonDir . $this->json;
-            $json = json_decode(file_get_contents($file));
-            $slug = substr($this->json, 0, -5);
-            $module = Module::createFromJSON($json);
-            $module->slug = $slug;
+            $module = $this->getJsonModuleInstance();
             $this->name = $module->name;
             $module->install();
             return true;
@@ -54,5 +55,54 @@ class Dependency {
         } else {
             return false;
         }
+    }
+
+    public function uninstall() {
+
+        if ($this->json) {
+            $module = $this->getJsonModuleInstance();
+            if($module->hasDeletableItems($forceDryRun = true)) {
+                $module->uninstall();
+                \ChromePhp::log($module->name, "uninstalled");
+                return true;
+            }
+            return false;
+        } else {
+            $modules = wire('modules');
+            if ($modules->isInstalled($this->name)) {
+                $module = $modules->get($this->name);
+                try {
+                    $modules->uninstall($this->name);
+                    return true;
+                } catch (WireException $e) {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        }
+    }
+
+    public function isInstalled() {
+        if ($this->json) {
+            $module = $this->getJsonModuleInstance();
+            return $module->hasDeletableItems($forceDryRun = true);
+        } else {
+            return wire('modules')->isInstalled($this->name);
+        }
+    }
+
+    protected function getJsonModuleInstance() {
+        if($this->jsonModuleInstance) {
+            return $this->jsonModuleInstance;
+        } else {
+            $file = $this->jsonDir . $this->json;
+            $json = json_decode(file_get_contents($file));
+            $slug = substr($this->json, 0, -5);
+            $this->jsonModuleInstance = Module::createFromJSON($json);
+            $this->jsonModuleInstance->slug = $slug;
+            return $this->jsonModuleInstance;
+        }
+
     }
 }

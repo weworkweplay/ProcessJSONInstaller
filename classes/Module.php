@@ -22,6 +22,7 @@ class Module {
     /* Dependencies to install this module */
     public $dependencies;
     public $installedDependencies;
+    public $uninstalledDependencies;
 
     /* Things installing this module will create */
     public $fields;
@@ -56,8 +57,17 @@ class Module {
      */
     public static $installedModules;
 
+    /**
+     * Assoc array to keep track of modules uninstalled in one go.
+     * Important to provide complete output for the user
+     * @var assoc array
+     */
+    public static $uninstalledModules;
+    public static $dryRunUninstalledModules;
+
     public function __construct() {
         $this->dependencies = array();
+        $this->uninstalledDependencies = array();
 
         $this->fields = array();
         $this->templates = array();
@@ -70,6 +80,16 @@ class Module {
         // only create once for all instances
         if (self::$installedModules === null) {
             self::$installedModules = array();
+        }
+
+        // only create once for all instances
+        if (self::$uninstalledModules === null) {
+            self::$uninstalledModules = array();
+        }
+        
+        // only create once for all instances
+        if (self::$dryRunUninstalledModules === null) {
+            self::$dryRunUninstalledModules = array();
         }
     }
 
@@ -88,11 +108,14 @@ class Module {
         if ($json->dependencies) {
             foreach ($json->dependencies as $dependencyJSON) {
                 $d = new Dependency();
-                $d->name = $dependencyJSON->name;
+
                 $d->zip = (isset($dependencyJSON->zip)) ? $dependencyJSON->zip : '';
                 $d->core = (isset($dependencyJSON->core)) ? (bool) $dependencyJSON->core : false;
-                $d->json = (isset($dependencyJSON->json)) ? (bool) $dependencyJSON->json : false;
+                $d->json = (isset($dependencyJSON->json)) ? $dependencyJSON->json : '';
                 $d->force = (isset($dependencyJSON->force)) ? (bool) $dependencyJSON->force : false;
+
+                $alternateName = $d->json ? $d->json : $d->zip;
+                $d->name = (isset($dependencyJSON->name)) ? $dependencyJSON->name : $alternateName;
 
                 $module->dependencies[] = $d;
             }
@@ -353,6 +376,29 @@ class Module {
     }
 
     /**
+     * uninstall all dependencies defined in this module
+     *
+     * @param  boolean $dryRun when true, nothing gets uninstalled
+     * @return void
+     **/
+    protected function uninstallDependencies($dryRun = false) {
+
+        // empty array, for running this method more than once
+        $this->uninstalledDependencies = array();
+
+        $fields = wire('fields');
+
+        foreach ($this->dependencies as $dependency) {
+            if ($dependency->isInstalled()) {
+                if (!$dryRun) {
+                    $dependency->uninstall();
+                }
+                $this->uninstalledDependencies[] = $dependency->name;
+            }
+        }
+    }
+
+    /**
      * checks if either of "deletedPages", "deletedTemplates" or "deletedFields"
      * is not empty after a dry run unistall process
      *
@@ -476,9 +522,22 @@ class Module {
      */
     public function uninstall($dryRun = false) {
 
+        if ($dryRun) {
+            if (isset(self::$dryRunUninstalledModules[$this->slug])) {
+                return;
+            }
+            self::$dryRunUninstalledModules[$this->slug] = $this;
+        } else {
+            if (isset(self::$uninstalledModules[$this->slug])) {
+                return;
+            }
+            self::$uninstalledModules[$this->slug] = $this;
+        }
+
         $this->deletePages($dryRun);
         $this->deleteTemplates($dryRun);
         $this->deleteFields($dryRun);
+        $this->uninstallDependencies($dryRun);
 
     }
 

@@ -247,10 +247,7 @@ class ProcessJSONInstaller extends Process {
         $outputTemplate= self::getTemplate('install');
         $outputTemplate->setArray(array(
             'headline' => $headline,
-            'installedFields' => $module->fields,
-            'installedDependencies' => $module->installedDependencies,
-            'installedTemplates' => $module->templates,
-            'installedPages' => $module->pages
+            'modules' => JSONInstaller\Module::$installedModules
         ));
 
         return $outputTemplate->render();
@@ -283,9 +280,7 @@ class ProcessJSONInstaller extends Process {
 
             $outputTemplate->setArray(array(
                 'headline' => $headline,
-                'deletedFields' => $module->deletedFields,
-                'deletedTemplates' => $module->deletedTemplates,
-                'deletedPages' => $module->deletedPages
+                'modules' => JSONInstaller\Module::$uninstalledModules
             ));
 
         } catch (WireException $e) {
@@ -314,15 +309,13 @@ class ProcessJSONInstaller extends Process {
 
         if (!$isNotInstalledYet) {
             $this->error('This feature is experimental.');
-            $this->error('The uninstall process will try to delete all pages, templates and fields defined in this module json, so if you included directives to merely modify existing pages, templates or fields, you should add a "prefab" property to each of those and set it to "true".');
+            $this->error('The uninstall process will try to delete all pages, templates and fields and uninstall all dependencies defined in this module json, so if you included directives to merely modify existing pages, templates or fields, you should add a "prefab" property to each of those and set it to "true".');
         }
 
         $outputTemplate= self::getTemplate('confirm-uninstall');
         $outputTemplate->setArray(array(
             'headline' => $headline,
-            'deletedFields' => $module->deletedFields,
-            'deletedTemplates' => $module->deletedTemplates,
-            'deletedPages' => $module->deletedPages,
+            'modules' => JSONInstaller\Module::$dryRunUninstalledModules,
             'isNotInstalledYet' => $isNotInstalledYet
         ));
 
