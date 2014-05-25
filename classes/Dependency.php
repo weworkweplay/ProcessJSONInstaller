@@ -119,18 +119,23 @@ class Dependency {
             }
             return false;
         } else {
-            $modules = wire('modules');
-            if ($modules->isInstalled($this->name)) {
-                $module = $modules->get($this->name);
-                try {
-                    $modules->uninstall($this->name);
-                    return true;
-                } catch (WireException $e) {
-                    return false;
-                }
-            } else {
-                return false;
-            }
+            return false;
+            // disabled PW modules uninstallation for now
+            // $modules = wire('modules');
+            // if ($modules->isInstalled($this->name)) {
+            //     // This is fabulously flaky, because a PW module can be comprised
+            //     // of submodules with different names. Also: if the name in the JSON
+            //     // file is not the exact of the PW module, this also fails.
+            //     $module = $modules->get($this->name);
+            //     try {
+            //         $modules->uninstall($this->name);
+            //         return true;
+            //     } catch (WireException $e) {
+            //         return false;
+            //     }
+            // } else {
+            //     return false;
+            // }
         }
     }
 
@@ -142,7 +147,9 @@ class Dependency {
             $module = $this->getJsonModuleInstance();
             return $module->hasDeletableItems($forceDryRun = true);
         } else {
-            return wire('modules')->isInstalled($this->name);
+            return false;
+            // disabled PW modules uninstallation for now
+            // return wire('modules')->isInstalled($this->name);
         }
     }
 
