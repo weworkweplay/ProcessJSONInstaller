@@ -119,7 +119,9 @@ class Module {
             if (!$t) {
                 $t = new Template();
                 $t->name = $templateJSON->name;
-                $t->label = $templateJSON->label;
+                if ($templateJSON->label) {
+                    $t->label = $templateJSON->label;
+                }
             }
 
             $fg = wire('fieldgroups')->get($templateJSON->name);
@@ -389,7 +391,7 @@ class Module {
             // DRY some
             $wire = isset($attr->fuel) ? wire($attr->fuel) : wire('pages');
             $type = isset($attr->type) ? $attr->type : self::PROPERTY_TYPE_DEFAULT;
-            $name = $attr->name;
+            $name = isset($attr->name) ? $attr->name : $attr->field;
             $value = $attr->value;
 
             switch (true) {
