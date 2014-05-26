@@ -24,7 +24,7 @@ class ProcessJSONInstaller extends Process {
     public static $moduleInfo = array(
         'title' => 'JSON Installer',
         'summary' => 'Run JSON files to create fields, templates and pages and install Plugin Modules',
-        'version' => 012,
+        'version' => 03,
         'author' => 'Pieter Beulque',
         'permission' => 'page-edit',
     );
