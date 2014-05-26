@@ -3,12 +3,12 @@
 namespace JSONInstaller;
 
 require_once 'Dependency.php';
+require_once 'SkippedItem.php';
 
 use \Field;
 use \FieldGroup;
 use \Template;
 use \Page;
-use \ProcessJSONInstaller;
 
 class Module {
 
@@ -40,7 +40,12 @@ class Module {
     public $deletedTemplates;
     public $deletedPages;
 
+    /* Things un-/installing this module will skip due to various reasons */
+    public $skippedItems;
+
     public $fieldsHaveSelectors = false;
+    public $templatesHaveSelectors = false;
+    public $pagesHaveSelectors = false;
 
     /* Storing unparsed objects until we want to install */
     public $fieldsJSON;
@@ -94,6 +99,8 @@ class Module {
         $this->deletedFields = array();
         $this->deletedTemplates = array();
         $this->deletedPages = array();
+
+        $this->skippedItems = array();
 
         // only create once for all instances
         if (self::$installedModules === null) {
@@ -158,11 +165,15 @@ class Module {
     }
 
     /**
-     * prepares the templates
+     * prepare the templates
      *
      * @return void
      */
-    protected function prepareTemplates() {
+    protected function installTemplates() {
+
+        // empty array, for running this method more than once
+        $this->templates = array();
+
         foreach ($this->templatesJSON as $templateJSON) {
             $t = wire('templates')->get($templateJSON->name);
             $attributes = (!empty($templateJSON->attributes)) ? $templateJSON->attributes : array();
@@ -200,23 +211,26 @@ class Module {
 
             // apply attributes and determine if selectors are used
             $hasSelector = self::applyAttributesOrDefaults($attributes, $t, $hasSelector);
-
-            // only save if selector is present
-            // see description in preparePages()
             if ($hasSelector) {
-                $t->save();
+                $this->templatesHaveSelectors = true;
             }
+
+            $t->save();
 
             $this->templates[] = $t;
         }
     }
 
     /**
-     * prepares the fields
+     * prepare the fields
      *
      * @return void
      */
-    protected function prepareFields() {
+    protected function installFields() {
+
+        // empty array, for running this method more than once
+        $this->fields = array();
+
         foreach ($this->fieldsJSON as $fieldJSON) {
             $name = (!empty($this->prefix) && $fieldJSON->name[0] !== '~') ? $this->prefix . '_' . $fieldJSON->name : $fieldJSON->name;
             $label = (!empty($fieldJSON->label)) ? $fieldJSON->label : '';
@@ -242,18 +256,14 @@ class Module {
                 $this->fieldsHaveSelectors = true;
             }
 
-            // only save if selector is present
-            // see description in preparePages()
-            if ($hasSelector) {
-                $f->save();
-            }
+            $f->save();
 
             $this->fields[] = $f;
         }
     }
 
     /**
-     * installs dependencies
+     * install dependencies
      *
      * @return void
      */
@@ -266,7 +276,7 @@ class Module {
     }
 
     /**
-     * installs dependencies
+     * install dependencies
      *
      * @return void
      */
@@ -279,11 +289,15 @@ class Module {
     }
 
     /**
-     * prepares the pages
+     * prepare the pages
      *
      * @return void
      */
-    protected function preparePages() {
+    protected function installPages() {
+
+        // empty array, for running this method more than once
+        $this->pages = array();
+
         foreach ($this->pagesJSON as $pageJSON) {
             $p = wire('pages')->get('name=' . $pageJSON->name . ',template=' . $pageJSON->template);
             $attributes = (!empty($pageJSON->attributes)) ? $pageJSON->attributes : array();
@@ -295,7 +309,6 @@ class Module {
                 $p->name = $pageJSON->name;
 
                 $p->parent = (isset($pageJSON->parent)) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
-
                 $p->template = $pageJSON->template;
 
                 // If set to true, Page:statusHidden, else, Page::statusOn
@@ -314,21 +327,27 @@ class Module {
 
             // apply attributes and determine if selectors are used
             $hasSelector = self::applyAttributesOrDefaults($attributes, $p, $hasSelector);
-
-            // only save if selector is present
-            // saving is necessary if pages in the same loop are referencing
-            // each other via selector, since selecting a not yet
-            // existing/saved page would not work
             if ($hasSelector) {
-                $p->save();
+                $this->pagesHaveSelectors = true;
             }
 
-            $this->pages[] = $p;
+            if ($p->parent instanceof \NullPage) {
+                $this->skippedItems[] = new SkippedItem(
+                    $pageJSON->name,
+                    SkippedItem::TYPE_PAGE,
+                    $reason = 'Parent "' . $pageJSON->parent . '" does not exist.',
+                    SkippedItem::PROCESS_INSTALL
+                );
+            } else {
+                $p->save();
+                $this->pages[] = $p;
+            }
+
         }
     }
 
     /**
-     * deletes all pages defined in this module, which are not marked as "prefab"
+     * delete all pages defined in this module, which are not marked as "prefab"
      *
      * @param  boolean $dryRun when true, nothing gets deleted
      * @return void
@@ -357,7 +376,7 @@ class Module {
     }
 
     /**
-     * deletes all templates defined in this module, which are not marked as "prefab"
+     * delete all templates defined in this module, which are not marked as "prefab"
      *
      * @param  boolean $dryRun when true, nothing gets deleted
      * @return void
@@ -387,7 +406,7 @@ class Module {
     }
 
     /**
-     * deletes all fields defined in this module, which are not marked as "prefab"
+     * delete all fields defined in this module, which are not marked as "prefab"
      *
      * @param  boolean $dryRun when true, nothing gets deleted
      * @return void
@@ -441,7 +460,7 @@ class Module {
     }
 
     /**
-     * uninstalls json dependencies
+     * uninstall json dependencies
      *
      * @return void
      */
@@ -486,7 +505,7 @@ class Module {
     }
 
     /**
-     * Interates through the attributes and assigns their values to the given $page
+     * Interate through the attributes and assigns their values to the given $page
      *
      * @param  array $attributes
      * @param  Page $page
@@ -533,48 +552,56 @@ class Module {
      **/
     public function install() {
 
+        // install only if not installed already
         if (isset(self::$installedModules[$this->slug])) {
             return;
         }
-
         self::$installedModules[$this->slug] = $this;
+
+        // if install is run more than once, skippedItems should be emptied
+        $this->skippedItems = array();
 
         $this->installDependencies();
         $this->installJsonDependencies();
 
-        $this->prepareFields();
+        $this->installFields();
+        $this->installTemplates();
+        $this->installPages();
 
-        foreach ($this->fields as $field) {
-            $field->save();
+        // run instalation again if necessary
+        if ($this->moduleHasSelectors()) {
+            // if install is run more than once, skippedItems should be emptied
+            // because skipped items may not be valid anymore
+            $this->skippedItems = array();
         }
 
-        // By first creating the fields, the script allows to specify new fields
-        // and use them in a new template in the same JSON file
-        $this->prepareTemplates();
-
-        foreach ($this->templates as $template) {
-            $template->save();
-        }
-
-        // By first creating the templates and fields,
-        // you can use a new template with new fields in a new page
-        // from the same JSON
-        $this->preparePages();
-
-        foreach ($this->pages as $page) {
-            $page->save();
-        }
-
-        // rerun field installation, because they may
-        // reference pages via selector that are created afterwards
+        // rerun template installation, because they may reference
+        // items via selector that are created afterwards
         // for example: for page fields
         if ($this->fieldsHaveSelectors) {
-            $this->prepareFields();
-            foreach ($this->fields as $field) {
-                $field->save();
-            }
+            $this->installFields();
         }
 
+        // rerun template installation, because they may reference
+        // items via selector that are created afterwards
+        if ($this->templatesHaveSelectors) {
+            $this->installTemplates();
+        }
+
+        // rerun template installation, because they may reference
+        // items via selector that are created afterwards
+        if ($this->pagesHaveSelectors) {
+            $this->installPages();
+        }
+
+    }
+
+    /**
+     * determine if any of the fields, templates or pages have selectors
+     * @return boolean
+     */
+    protected function moduleHasSelectors() {
+        return ($this->fieldsHaveSelectors || $this->templatesHaveSelectors || $this->pagesHaveSelectors);
     }
 
     /**
@@ -618,5 +645,19 @@ class Module {
         }
 
         $template->fields->save();
+    }
+
+    /**
+     * globally accessible for outputting a list of all skipped item
+     * @return array all skipped items of all modules
+     */
+    public static function getAllSkippedItems() {
+        $skippedItems = array();
+        foreach (self::$installedModules as $module) {
+            foreach ($module->skippedItems as $skippedItem) {
+                $skippedItems[] = $skippedItem;
+            }
+        }
+        return $skippedItems;
     }
 }

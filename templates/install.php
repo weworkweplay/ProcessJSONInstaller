@@ -61,6 +61,20 @@
 		</ul>
 	<?php endif ?>
 
+	<?php if (!empty($skippedItems)): ?>
+		<h3>Skipped items</h3>
+		<ul class="json-installer-list">
+			<?php foreach ($skippedItems as $skippedItem): ?>
+
+				<li style="color: red">
+					<?php echo $skippedItem->type?>: <?php echo $skippedItem->name?>,
+					Reason: <?php echo $skippedItem->reason?>
+				</li>
+
+			<?php endforeach ?>
+		</ul>
+	<?php endif ?>
+
 <?php endforeach ?>
 
 
