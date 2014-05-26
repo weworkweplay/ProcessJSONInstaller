@@ -66,9 +66,10 @@
 		<ul class="json-installer-list">
 			<?php foreach ($skippedItems as $skippedItem): ?>
 
-				<li style="color: red">
-					<?php echo $skippedItem->type?>: <?php echo $skippedItem->name?>,
-					Reason: <?php echo $skippedItem->reason?>
+				<li>
+					<strong><?php echo $skippedItem->type?></strong>: <?php echo $skippedItem->name?>,
+					<strong>Reason</strong>: <?php echo $skippedItem->reason?>,
+					<strong>From</strong>: <?php echo $skippedItem->module->name?>
 				</li>
 
 			<?php endforeach ?>

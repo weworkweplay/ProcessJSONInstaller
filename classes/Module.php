@@ -335,8 +335,9 @@ class Module {
                 $this->skippedItems[] = new SkippedItem(
                     $pageJSON->name,
                     SkippedItem::TYPE_PAGE,
-                    $reason = 'Parent "' . $pageJSON->parent . '" does not exist.',
-                    SkippedItem::PROCESS_INSTALL
+                    $reason = 'Parent "' . $pageJSON->parent . '" does not exist',
+                    SkippedItem::PROCESS_INSTALL,
+                    $this
                 );
             } else {
                 $p->save();

@@ -42,10 +42,17 @@ class SkippedItem {
      */
     public $process;
 
-    public function __construct($name, $type, $reason, $process) {
+    /**
+     * in which module it was skipped
+     * @var Module
+     */
+    public $module;
+
+    public function __construct($name, $type, $reason, $process, $module) {
         $this->name = $name;
         $this->type = $type;
         $this->reason = $reason;
         $this->process = $process;
+        $this->module = $module;
     }
 }
