@@ -94,12 +94,12 @@ class ProcessJSONInstaller extends Process {
                 $module->name,
                 $module->description,
                 $alsoInstalls,
-                'Install' => 'install/' . $key
+                'Install' => $this->url . 'install/' . $key
             );
 
             if ($config->advanced) {
                 if ($module->hasDeletableItems($forceDryRun = true)) {
-                    $contentColumns['Uninstall'] = 'uninstall/' . $key . '/' . self::confirmParam;
+                    $contentColumns['Uninstall'] = $this->url . 'uninstall/' . $key . '/' . self::confirmParam;
                 } else {
                     $contentColumns[] = 'n/a';
                 }
