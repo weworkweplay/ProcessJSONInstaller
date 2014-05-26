@@ -119,7 +119,7 @@ class Module {
             if (!$t) {
                 $t = new Template();
                 $t->name = $templateJSON->name;
-                if ($templateJSON->label) {
+                if (isset($templateJSON->label)) {
                     $t->label = $templateJSON->label;
                 }
             }
