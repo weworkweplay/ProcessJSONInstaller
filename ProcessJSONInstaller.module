@@ -236,6 +236,11 @@ class ProcessJSONInstaller extends Process {
 
         $this->message('Succesfully installed or updated ' . $module->name);
 
+        $skippedItems = JSONInstaller\Module::getAllSkippedItems();
+        if ($skippedItems) {
+            $this->error('Some items were skipped');
+        }
+
         $headline = 'Installed ' . $module->name;
 
         $this->fuel->set('processHeadline', $headline);
@@ -245,6 +250,7 @@ class ProcessJSONInstaller extends Process {
         $outputTemplate= self::getTemplate('install');
         $outputTemplate->setArray(array(
             'headline' => $headline,
+            'skippedItems' => $skippedItems,
             'modules' => JSONInstaller\Module::$installedModules
         ));
 
