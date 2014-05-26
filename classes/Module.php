@@ -9,6 +9,7 @@ use \Field;
 use \FieldGroup;
 use \Template;
 use \Page;
+use \NullPage;
 
 class Module {
 
@@ -298,7 +299,12 @@ class Module {
         // empty array, for running this method more than once
         $this->pages = array();
 
+        $templates = wire('templates');
+
         foreach ($this->pagesJSON as $pageJSON) {
+
+            $skipped = false;
+
             $p = wire('pages')->get('name=' . $pageJSON->name . ',template=' . $pageJSON->template);
             $attributes = (!empty($pageJSON->attributes)) ? $pageJSON->attributes : array();
             $defaults = (!empty($pageJSON->defaults)) ? $pageJSON->defaults : array();
@@ -306,11 +312,14 @@ class Module {
 
             if (!$p->id) {
                 $p = new Page();
-                $p->name = $pageJSON->name;
+            }
 
-                $p->parent = (isset($pageJSON->parent)) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
+            $p->name = $pageJSON->name;
+
+            $p->parent = (isset($pageJSON->parent)) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
+
+            if ($templates->get($pageJSON->template)) {
                 $p->template = $pageJSON->template;
-
                 // If set to true, Page:statusHidden, else, Page::statusOn
                 $hidden = isset($pageJSON->hidden) ? ((bool) $pageJSON->hidden ? Page::statusHidden : Page::statusOn) : Page::statusOn;
 
@@ -323,15 +332,24 @@ class Module {
                 // apply defaults and determine if selectors are used
                 $hasSelector = self::applyAttributesOrDefaults($defaults, $p, $hasSelector);
 
+                // apply attributes and determine if selectors are used
+                $hasSelector = self::applyAttributesOrDefaults($attributes, $p, $hasSelector);
+                if ($hasSelector) {
+                    $this->pagesHaveSelectors = true;
+                }
+            } else {
+                $this->skippedItems[] = new SkippedItem(
+                    $pageJSON->name,
+                    SkippedItem::TYPE_PAGE,
+                    $reason = 'Template "' . $pageJSON->template . '" does not exist',
+                    SkippedItem::PROCESS_INSTALL,
+                    $this
+                );
+                $skipped = true;
             }
 
-            // apply attributes and determine if selectors are used
-            $hasSelector = self::applyAttributesOrDefaults($attributes, $p, $hasSelector);
-            if ($hasSelector) {
-                $this->pagesHaveSelectors = true;
-            }
 
-            if ($p->parent instanceof \NullPage) {
+            if ($p->parent instanceof NullPage) {
                 $this->skippedItems[] = new SkippedItem(
                     $pageJSON->name,
                     SkippedItem::TYPE_PAGE,
@@ -339,7 +357,10 @@ class Module {
                     SkippedItem::PROCESS_INSTALL,
                     $this
                 );
-            } else {
+                $skipped = true;
+            }
+
+            if (!$skipped) {
                 $p->save();
                 $this->pages[] = $p;
             }
@@ -354,7 +375,7 @@ class Module {
      * @return void
      **/
     protected function deletePages($dryRun = false) {
-
+        $pages = wire('pages');
         // empty array, for running this method more than once
         $this->deletedPages = array();
 
@@ -366,13 +387,25 @@ class Module {
             $p = wire('pages')->get('name=' . $pageJSON->name . ',template=' . $pageJSON->template);
 
             if (isset($p->id) && $p->id) {
-                $url = $p->url();
-                if (!$dryRun) {
-                    $p->delete();
-                }
-                $this->deletedPages[] = $p;
+                $this->addPageAndAllChildrenToDeletedPages($p);
 
+                if (!$dryRun) {
+                    $pages->delete($p, $recursive = true);
+                }
             }
+        }
+    }
+
+    /**
+     * add given page and all children to $this->deletedPages recursively
+     * @param Page $page
+     */
+    protected function addPageAndAllChildrenToDeletedPages($page) {
+        if (!in_array($page, $this->deletedPages)) {
+            $this->deletedPages[] = $page;
+        }
+        foreach ($page->children as $child) {
+            $this->addPageAndAllChildrenToDeletedPages($child);
         }
     }
 
@@ -467,7 +500,7 @@ class Module {
      */
     protected function uninstallJsonDependencies($dryRun = false) {
         foreach ($this->jsonDependencies as $jsonDependency) {
-            if($jsonDependency->hasDeletableItems($forceDryRun = true)) {
+            if ($jsonDependency->hasDeletableItems($forceDryRun = true)) {
                 $jsonDependency->uninstall($dryRun);
             }
         }
@@ -483,7 +516,7 @@ class Module {
      **/
     public function hasDeletableItems($forceDryRun = false) {
 
-        if($forceDryRun) {
+        if ($forceDryRun) {
             $this->uninstall($dryRun = true);
         }
 
