@@ -8,6 +8,7 @@ use \Field;
 use \FieldGroup;
 use \Template;
 use \Page;
+use \ProcessJSONInstaller;
 
 class Module {
 
@@ -23,6 +24,11 @@ class Module {
     public $dependencies;
     public $installedDependencies;
     public $uninstalledDependencies;
+
+    /* JSON Dependencies to install this module */
+    public $jsonDependencies;
+    public $installedJsonDependencies;
+    public $uninstalledJsonDependencies;
 
     /* Things installing this module will create */
     public $fields;
@@ -63,11 +69,23 @@ class Module {
      * @var array
      */
     public static $uninstalledModules;
+
+    /**
+     * Assoc array to keep track of modules dry run uninstalled in one go.
+     * Important to provide complete output for the user
+     * @var array
+     */
     public static $dryRunUninstalledModules;
 
     public function __construct() {
+
         $this->dependencies = array();
+        $this->installedDependencies = array();
         $this->uninstalledDependencies = array();
+
+        $this->jsonDependencies = array();
+        $this->installedJsonDependencies = array();
+        $this->uninstalledJsonDependencies = array();
 
         $this->fields = array();
         $this->templates = array();
@@ -111,17 +129,27 @@ class Module {
 
                 $d->zip = (isset($dependencyJSON->zip)) ? $dependencyJSON->zip : '';
                 $d->core = (isset($dependencyJSON->core)) ? (bool) $dependencyJSON->core : false;
-                $d->json = (isset($dependencyJSON->json)) ? $dependencyJSON->json : '';
                 $d->force = (isset($dependencyJSON->force)) ? (bool) $dependencyJSON->force : false;
 
-                // TODO: this is not pretty
-                $alternateName = $d->json ? $d->json : $d->zip;
-                $d->name = (isset($dependencyJSON->name)) ? $dependencyJSON->name : $alternateName;
+                $d->name = $dependencyJSON->name;
 
                 $module->dependencies[] = $d;
             }
         }
 
+        if (isset($json->jsonDependencies)) {
+            foreach ($json->jsonDependencies as $jsonDependencyJSON) {
+                
+                if ($jsonModule = JSONLoader::loadModule($jsonDependencyJSON)) {
+                    // TODO: documentation
+                    if ($jsonModule instanceof Module) {
+                        $module->jsonDependencies[] = JSONLoader::loadModule($jsonDependencyJSON);
+                    }
+                }
+
+            }
+        }
+        
         $module->fieldsJSON = isset($json->fields) ? $json->fields : array();
         $module->templatesJSON = isset($json->templates) ? $json->templates : array();
         $module->pagesJSON = isset($json->pages) ? $json->pages : array();

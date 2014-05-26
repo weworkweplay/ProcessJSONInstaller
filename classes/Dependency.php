@@ -17,12 +17,6 @@ class Dependency {
     public $zip;
 
     /**
-     * The file name of the json module
-     * @var string
-     */
-    public $json;
-
-    /**
      * Whether it's a core/preexisting module
      * @var boolean
      */
@@ -30,7 +24,7 @@ class Dependency {
 
     /**
      * Whether this module was skipped at un-/installation
-     * not implemented yet
+     * TODO: not implemented yet
      * @var boolean
      */
     public $skipped = false;
@@ -38,16 +32,10 @@ class Dependency {
     /**
      * Whether this module should be installed/downloaaded/unzipped
      * regardless if it's already installed or not
-     * not implemented yet
+     * TODO: not implemented yet
      * @var boolean
      */
     public $force = false;
-
-    /**
-     * Holding the module instance, if it's a dependency of type JSON
-     * @var JSONInstaller\Module
-     */
-    protected $jsonModuleInstance;
 
     /**
      * The path to where the PW modules reside
@@ -56,35 +44,14 @@ class Dependency {
      */
     private $installDir = '../modules/';
 
-    /**
-     * The path to where the json module files reside
-     * TODO: this is weird and unclear
-     * @var string
-     */
-    private $jsonDir;
-
-    /**
-     * The file name without extension
-     * @var string
-     */
-    protected $slug;
-
-    public function __construct() {
-        $this->jsonDir = dirname(__FILE__) . '/' . $this->installDir;
-    }
+    public function __construct() {}
 
     /**
      * @return boolean
      */
     public function install() {
-        $modules = wire('modules');
 
-        if ($this->json && file_exists($this->jsonDir . $this->json)) {
-            $module = $this->getJsonModuleInstance();
-            $this->name = $module->name;
-            $module->install();
-            return true;
-        }
+        $modules = wire('modules');
 
         if ($modules->isInstalled($this->name)) {
             return true;
@@ -116,76 +83,29 @@ class Dependency {
      * @return boolean
      */
     public function uninstall() {
-
-        if ($this->json) {
-            $module = $this->getJsonModuleInstance();
-            if ($module->hasDeletableItems($forceDryRun = true)) {
-                $module->uninstall();
-                return true;
-            }
-            return false;
-        } else {
-            return false;
-            // disabled PW modules uninstallation for now
-            // $modules = wire('modules');
-            // if ($modules->isInstalled($this->name)) {
-            //     // This is fabulously flaky, because a PW module can be comprised
-            //     // of submodules with different names. Also: if the name in the JSON
-            //     // file is not the exact of the PW module, this also fails.
-            //     $module = $modules->get($this->name);
-            //     try {
-            //         $modules->uninstall($this->name);
-            //         return true;
-            //     } catch (WireException $e) {
-            //         return false;
-            //     }
-            // } else {
-            //     return false;
-            // }
-        }
+        return false;
+        // disabled PW modules uninstallation for now
+        // $modules = wire('modules');
+        // if ($modules->isInstalled($this->name)) {
+        //     // This is fabulously flaky, because a PW module can be comprised
+        //     // of submodules with different names. Also: if the name in the JSON
+        //     // file is not the exact of the PW module, this also fails.
+        //     $module = $modules->get($this->name);
+        //     try {
+        //         $modules->uninstall($this->name);
+        //         return true;
+        //     } catch (WireException $e) {
+        //         return false;
+        //     }
+        // } else {
+        //     return false;
+        // }
     }
 
     /**
      * @return boolean
      */
     public function isInstalled() {
-        if ($this->json) {
-            $module = $this->getJsonModuleInstance();
-            return $module->hasDeletableItems($forceDryRun = true);
-        } else {
-            return false;
-            // disabled PW modules uninstallation for now
-            // return wire('modules')->isInstalled($this->name);
-        }
-    }
-
-    /**
-     * @return JSONInstaller\Module
-     */
-    protected function getJsonModuleInstance() {
-        if ($this->jsonModuleInstance) {
-            return $this->jsonModuleInstance;
-        } else {
-            $file = $this->jsonDir . $this->json;
-            $json = json_decode(file_get_contents($file));
-            $slug = substr($this->json, 0, -5);
-            $this->jsonModuleInstance = Module::createFromJSON($json);
-            $this->jsonModuleInstance->slug = $slug;
-            $this->name = $this->jsonModuleInstance->name;
-            $this->slug = $slug;
-            return $this->jsonModuleInstance;
-        }
-    }
-
-    public function __get($key) {
-        if(isset($this->$key)) {
-            return $this->$key;
-        } else {
-            return '';
-        }
-    }
-
-    public function __set($key, $value) {
-        $this->$key = $value;
+        return false;
     }
 }

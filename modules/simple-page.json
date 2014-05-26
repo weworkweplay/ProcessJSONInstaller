@@ -3,18 +3,19 @@
     "description": "Creates a simple page template with two columns and some page options",
     "prefix": "",
     "dependencies": [
-        { "json": "seo.json" },
         {
             "name": "AdminTemplateColumns",
             "zip": "https://github.com/Notanotherdotcom/AdminTemplateColumns/zipball/master",
-            "core": false,
-            "force": true
+            "core": false
         },
         {
             "name": "ProcessPageDelete",
             "zip": "https://github.com/NicoKnoll/ProcessPageDelete/zipball/master",
             "core": false
         }
+    ],
+    "jsonDependencies": [
+        "seo.json", "simple-page.json", "sharing.json"
     ],
     "fields": [
         {
