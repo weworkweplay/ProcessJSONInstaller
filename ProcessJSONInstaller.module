@@ -2,6 +2,7 @@
 
 require_once 'classes/Dependency.php';
 require_once 'classes/Module.php';
+require_once 'classes/JSONLoader.php';
 
 /**
  * JSON Installer Module
@@ -22,8 +23,8 @@ class ProcessJSONInstaller extends Process {
 
     public static $moduleInfo = array(
         'title' => 'JSON Installer',
-        'summary' => 'Run JSON files to create fields, templates and pages',
-        'version' => 010,
+        'summary' => 'Run JSON files to create fields, templates and pages and install Plugin Modules',
+        'version' => 03,
         'author' => 'Pieter Beulque',
         'permission' => 'page-edit',
     );
@@ -39,31 +40,16 @@ class ProcessJSONInstaller extends Process {
      * Array containing all installable modules
      */
     protected $installableModules;
+    protected $jsonLoader;
 
     /**
      * The base URL for the module
      */
     protected $url;
 
-    private function loadModules() {
-        $dir = $this->config->paths->siteModules . get_class() . DIRECTORY_SEPARATOR . 'modules';
-        $tmp = scandir($dir);
-        $this->installableModules = array();
-
-        foreach ($tmp as $file) {
-            if (strpos($file, '.json') > 0) {
-                $json = json_decode(file_get_contents($dir . DIRECTORY_SEPARATOR . $file));
-                $slug = substr($file, 0, -5);
-                $module = JSONInstaller\Module::createFromJSON($json);
-                $module->slug = $slug;
-                $this->installableModules[$slug] = $module;
-            }
-        }
-    }
-
     public function init() {
         parent::init(); // required
-        $this->loadModules();
+        $this->jsonLoader = JSONInstaller\JSONLoader::create();
         $this->url = wire('pages')->get('template=admin, name=' . self::pageName)->url;
     }
 
@@ -77,25 +63,43 @@ class ProcessJSONInstaller extends Process {
         );
 
         if ($config->advanced) {
+            $headerColumns[] = 'also un-/installs';
             $headerColumns[] = 'install';
             $headerColumns[] = 'uninstall';
         } else {
+            $headerColumns[] = 'also installs';
             $headerColumns[] = 'action';
         }
 
         $table->headerRow($headerColumns);
 
-        foreach ($this->installableModules as $key => $module) {
+        $installableModules = $this->jsonLoader->getModules();
+
+        foreach ($installableModules as $key => $module) {
+
+            $jsonDependencies = array();
+            foreach ($module->jsonDependencies as $jsonDependency) {
+                if(isset($jsonDependency->name)) {
+                    $jsonDependencies[] = $jsonDependency->name;
+                }
+            }
+
+            if(count($jsonDependencies) > 0) {
+                $alsoInstalls = implode(', ', $jsonDependencies);
+            } else {
+                $alsoInstalls = '';
+            }
 
             $contentColumns = array(
                 $module->name,
                 $module->description,
-                'Install' => 'install/' . $key
+                $alsoInstalls,
+                'Install' => $this->url . 'install/' . $key
             );
 
             if ($config->advanced) {
                 if ($module->hasDeletableItems($forceDryRun = true)) {
-                    $contentColumns['Uninstall'] = 'uninstall/' . $key . '/' . self::confirmParam;
+                    $contentColumns['Uninstall'] = $this->url . 'uninstall/' . $key . '/' . self::confirmParam;
                 } else {
                     $contentColumns[] = 'n/a';
                 }
@@ -184,43 +188,37 @@ class ProcessJSONInstaller extends Process {
     }
 
     public function installModule($name) {
-        $this->loadModules();
+        $module = $this->jsonLoader->getModule($name);
 
-        $module = $this->installableModules[$name];
-
-        if (empty($module)) {
-            throw new WireException();
+        if ($module) {
+            $module->install();
+        } else {
+            throw new WireException('Install: module ' . $name . ' does not exist.');
         }
-
-        $module->install();
 
         return $module;
     }
 
     public function uninstallModule($name) {
-        $this->loadModules();
+        $module = $this->jsonLoader->getModule($name);
 
-        $module = $this->installableModules[$name];
-
-        if (empty($module)) {
-            throw new WireException();
+        if ($module) {
+            $module->uninstall();
+        } else {
+            throw new WireException('Uninstall: module ' . $name . ' does not exist.');
         }
-
-        $module->uninstall();
 
         return $module;
     }
 
-    public function dryRunModuleUninstallation($name) {
-        $this->loadModules();
+    public function uninstallModuleDry($name) {
+        $module = $this->jsonLoader->getModule($name);
 
-        $module = $this->installableModules[$name];
-
-        if (empty($module)) {
-            throw new WireException();
+        if ($module) {
+            $module->uninstall($dryRun = true);
+        } else {
+            throw new WireException('Uninstall: module ' . $name . ' does not exist.');
         }
-
-        $module->uninstall($dryRun = true);
 
         return $module;
     }
@@ -247,10 +245,7 @@ class ProcessJSONInstaller extends Process {
         $outputTemplate= self::getTemplate('install');
         $outputTemplate->setArray(array(
             'headline' => $headline,
-            'installedFields' => $module->fields,
-            'installedDependencies' => $module->installedDependencies,
-            'installedTemplates' => $module->templates,
-            'installedPages' => $module->pages
+            'modules' => JSONInstaller\Module::$installedModules
         ));
 
         return $outputTemplate->render();
@@ -283,9 +278,7 @@ class ProcessJSONInstaller extends Process {
 
             $outputTemplate->setArray(array(
                 'headline' => $headline,
-                'deletedFields' => $module->deletedFields,
-                'deletedTemplates' => $module->deletedTemplates,
-                'deletedPages' => $module->deletedPages
+                'modules' => JSONInstaller\Module::$uninstalledModules
             ));
 
         } catch (WireException $e) {
@@ -305,7 +298,7 @@ class ProcessJSONInstaller extends Process {
 
         $name = $this->input->urlSegment(2);
 
-        $module = $this->dryRunModuleUninstallation($name);
+        $module = $this->uninstallModuleDry($name);
 
         $headline = 'Confirm uninstallation of ' . $module->name;
         $isNotInstalledYet = !$module->hasDeletableItems($forceDryRun = false);
@@ -315,15 +308,13 @@ class ProcessJSONInstaller extends Process {
         if (!$isNotInstalledYet) {
             $this->message('This feature is experimental.');
             $this->message('The uninstall process will try to delete all pages, templates and fields defined in this module json, so if you included directives to merely modify existing pages, templates or fields, you should add a "prefab" property to each of those and set it to "true".');
-            $this->message('Nothing will be deleted until you click the Confirm button below.');
+            $this->message('Nothing will be deleted until you click the "Uninstall!" button below.');
         }
 
         $outputTemplate= self::getTemplate('confirm-uninstall');
         $outputTemplate->setArray(array(
             'headline' => $headline,
-            'deletedFields' => $module->deletedFields,
-            'deletedTemplates' => $module->deletedTemplates,
-            'deletedPages' => $module->deletedPages,
+            'modules' => JSONInstaller\Module::$dryRunUninstalledModules,
             'isNotInstalledYet' => $isNotInstalledYet
         ));
 
@@ -332,7 +323,7 @@ class ProcessJSONInstaller extends Process {
         if (!$isNotInstalledYet) {
             $button = $this->modules->get('InputfieldButton');
             $button->href = $this->url . 'uninstall/' . $name;
-            $button->value = 'Confirm';
+            $button->value = 'Uninstall!';
 
             $out .= $button->render();
         }
