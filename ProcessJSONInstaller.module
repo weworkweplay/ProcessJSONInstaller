@@ -156,6 +156,10 @@ class ProcessJSONInstaller extends Process {
     }
 
     public function ___executeExport() {
+
+        $this->breadcrumbs->add(new Breadcrumb($this->url, self::$moduleInfo['title']));
+        $this->fuel->set('processHeadline', 'Export');
+
         $export = $this->modules->get('ProcessExportProfile');
 
         if (!$export) {
