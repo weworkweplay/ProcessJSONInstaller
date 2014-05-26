@@ -9,12 +9,7 @@
 		<ul class="json-installer-list">
 			<?php foreach ($module->uninstalledDependencies as $uninstalledDependency): ?>
 
-				<li>
-					<code><?php echo $uninstalledDependency->slug?></code>
-					<?php if ($uninstalledDependency->name): ?>
-						 - <?php echo $uninstalledDependency->name?>
-					<?php endif ?>
-				</li>
+				<li><?php echo $uninstalledDependency->name?></li>
 
 			<?php endforeach ?>
 		</ul>

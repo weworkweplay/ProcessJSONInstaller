@@ -264,6 +264,19 @@ class Module {
             }
         }
     }
+    
+    /**
+     * installs dependencies
+     *
+     * @return void
+     */
+    protected function installJsonDependencies() {
+        foreach ($this->jsonDependencies as $jsonDependency) {
+            if ($jsonDependency->install()) {
+                $this->installedJsonDependencies[] = $jsonDependency;
+            }
+        }
+    }
 
     /**
      * prepares the pages
@@ -426,6 +439,19 @@ class Module {
             }
         }
     }
+    
+    /**
+     * uninstalls json dependencies
+     *
+     * @return void
+     */
+    protected function uninstallJsonDependencies($dryRun = false) {
+        foreach ($this->jsonDependencies as $jsonDependency) {
+            if($jsonDependency->hasDeletableItems($forceDryRun = true)) {
+                $jsonDependency->uninstall($dryRun);
+            }
+        }
+    }
 
     /**
      * checks if either of "deletedPages", "deletedTemplates" or "deletedFields"
@@ -514,6 +540,7 @@ class Module {
         self::$installedModules[$this->slug] = $this;
 
         $this->installDependencies();
+        $this->installJsonDependencies();
 
         $this->prepareFields();
 
@@ -557,7 +584,8 @@ class Module {
      * @return void
      */
     public function uninstall($dryRun = false) {
-
+        
+        // TODO: not pretty
         if ($dryRun) {
             if (isset(self::$dryRunUninstalledModules[$this->slug])) {
                 return;
@@ -573,7 +601,8 @@ class Module {
         $this->deletePages($dryRun);
         $this->deleteTemplates($dryRun);
         $this->deleteFields($dryRun);
-        $this->uninstallDependencies($dryRun);
+        $this->uninstallJsonDependencies($dryRun);
+
 
     }
 

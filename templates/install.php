@@ -8,16 +8,7 @@
 		<h3>Installed <em><?php echo $module->name?></em> dependencies</h3>
 		<ul class="json-installer-list">
 			<?php foreach ($module->installedDependencies as $installedDependency): ?>
-
-				<li>
-					<?php if ($installedDependency->slug): ?>
-						 <code><?php echo $installedDependency->slug?></code> -
-					<?php endif ?>
-					<?php if ($installedDependency->name): ?>
-						 <?php echo $installedDependency->name?>
-					<?php endif ?>
-				</li>
-
+				<li><?php echo $installedDependency->name?></li>
 			<?php endforeach ?>
 		</ul>
 	<?php endif ?>
