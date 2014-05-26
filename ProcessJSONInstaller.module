@@ -305,8 +305,9 @@ class ProcessJSONInstaller extends Process {
         $this->fuel->set('processHeadline', $headline);
 
         if (!$isNotInstalledYet) {
-            $this->error('This feature is experimental.');
-            $this->error('The uninstall process will try to delete all pages, templates and fields and uninstall all dependencies defined in this module json, so if you included directives to merely modify existing pages, templates or fields, you should add a "prefab" property to each of those and set it to "true".');
+            $this->message('This feature is experimental.');
+            $this->message('The uninstall process will try to delete all pages, templates and fields defined in this module json, so if you included directives to merely modify existing pages, templates or fields, you should add a "prefab" property to each of those and set it to "true".');
+            $this->message('Nothing will be deleted until you click the Confirm button below.');
         }
 
         $outputTemplate= self::getTemplate('confirm-uninstall');
