@@ -16,6 +16,8 @@ class Module {
     const PROPERTY_TYPE_SELECTOR = 'selector';
     const PROPERTY_TYPE_SELECTOR_ID = 'selector_id';
     const PROPERTY_TYPE_DEFAULT = 'default';
+    const EMPTY_JSON_PARENT = '"EMPTY PARENT"';
+    const EMPTY_JSON_TEMPLATE = '"EMPTY TEMPLATE"';
 
     public $name;
     public $description;
@@ -338,10 +340,11 @@ class Module {
                     $this->pagesHaveSelectors = true;
                 }
             } else {
+                $altTemplate = isset($pageJSON->template) ? $pageJSON->template : self::EMPTY_JSON_TEMPLATE;
                 $this->skippedItems[] = new SkippedItem(
                     $pageJSON->name,
                     SkippedItem::TYPE_PAGE,
-                    $reason = 'Template "' . $pageJSON->template . '" does not exist',
+                    $reason = 'Template "' . $altTemplate . '" does not exist',
                     SkippedItem::PROCESS_INSTALL,
                     $this
                 );
@@ -350,10 +353,11 @@ class Module {
 
 
             if ($p->parent instanceof NullPage) {
+                $altParent = isset($pageJSON->parent) ? $pageJSON->parent : self::EMPTY_JSON_PARENT;
                 $this->skippedItems[] = new SkippedItem(
                     $pageJSON->name,
                     SkippedItem::TYPE_PAGE,
-                    $reason = 'Parent "' . $pageJSON->parent . '" does not exist',
+                    $reason = 'Parent "' . $altParent . '" does not exist',
                     SkippedItem::PROCESS_INSTALL,
                     $this
                 );
