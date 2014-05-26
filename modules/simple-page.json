@@ -6,7 +6,8 @@
         {
             "name": "AdminTemplateColumns",
             "zip": "https://github.com/Notanotherdotcom/AdminTemplateColumns/zipball/master",
-            "core": false
+            "core": false,
+            "force": true
         },
         {
             "name": "ProcessPageDelete",

@@ -21,6 +21,7 @@ class Module {
 
     /* Dependencies to install this module */
     public $dependencies;
+    public $installedDependencies;
 
     /* Things installing this module will create */
     public $fields;
@@ -39,6 +40,22 @@ class Module {
     public $templatesJSON;
     public $pagesJSON;
 
+    /**
+     * yields the slug like "some-module", same as filename
+     * TODO: it's would be more consistent if this property was calles $name
+     * and the current $name property would be renamed to $title, like in PW
+     * @var string
+     */
+    public $slug;
+
+    /**
+     * Assoc array to keep track of modules installed in one go.
+     * Important when modules reference other modules as dependencies
+     * to prevent circular references and to provide complete output for the user
+     * @var assoc array
+     */
+    public static $installedModules;
+
     public function __construct() {
         $this->dependencies = array();
 
@@ -49,6 +66,11 @@ class Module {
         $this->deletedFields = array();
         $this->deletedTemplates = array();
         $this->deletedPages = array();
+
+        // only create once for all instances
+        if (self::$installedModules === null) {
+            self::$installedModules = array();
+        }
     }
 
     /**
@@ -69,6 +91,8 @@ class Module {
                 $d->name = $dependencyJSON->name;
                 $d->zip = (isset($dependencyJSON->zip)) ? $dependencyJSON->zip : '';
                 $d->core = (isset($dependencyJSON->core)) ? (bool) $dependencyJSON->core : false;
+                $d->json = (isset($dependencyJSON->json)) ? (bool) $dependencyJSON->json : false;
+                $d->force = (isset($dependencyJSON->force)) ? (bool) $dependencyJSON->force : false;
 
                 $module->dependencies[] = $d;
             }
@@ -81,6 +105,11 @@ class Module {
         return $module;
     }
 
+    /**
+     * prepares the templates
+     *
+     * @return void
+     */
     protected function prepareTemplates() {
         foreach ($this->templatesJSON as $templateJSON) {
             $t = wire('templates')->get($templateJSON->name);
@@ -90,7 +119,9 @@ class Module {
             if (!$t) {
                 $t = new Template();
                 $t->name = $templateJSON->name;
-                $t->label = $templateJSON->label;
+                if (isset($templateJSON->label)) {
+                    $t->label = $templateJSON->label;
+                }
             }
 
             $fg = wire('fieldgroups')->get($templateJSON->name);
@@ -128,6 +159,11 @@ class Module {
         }
     }
 
+    /**
+     * prepares the fields
+     *
+     * @return void
+     */
     protected function prepareFields() {
         foreach ($this->fieldsJSON as $fieldJSON) {
             $name = (!empty($this->prefix) && $fieldJSON->name[0] !== '~') ? $this->prefix . '_' . $fieldJSON->name : $fieldJSON->name;
@@ -164,9 +200,27 @@ class Module {
         }
     }
 
+    /**
+     * installs dependencies
+     *
+     * @return void
+     */
+    protected function installDependencies() {
+        foreach ($this->dependencies as $dependency) {
+            if ($dependency->install()) {
+                $this->installedDependencies[] = $dependency;
+            }
+        }
+    }
+
+    /**
+     * prepares the pages
+     *
+     * @return void
+     */
     protected function preparePages() {
         foreach ($this->pagesJSON as $pageJSON) {
-            $p = wire('pages')->get('name=' . $pageJSON->name);
+            $p = wire('pages')->get('name=' . $pageJSON->name . ',template=' . $pageJSON->template);
             $attributes = (!empty($pageJSON->attributes)) ? $pageJSON->attributes : array();
             $defaults = (!empty($pageJSON->defaults)) ? $pageJSON->defaults : array();
             $hasSelector = false;
@@ -208,25 +262,45 @@ class Module {
         }
     }
 
-    protected function deletePages() {
+    /**
+     * deletes all pages defined in this module, which are not marked as "prefab"
+     *
+     * @param  boolean $dryRun when true, nothing gets deleted
+     * @return void
+     **/
+    protected function deletePages($dryRun = false) {
+
+        // empty array, for running this method more than once
+        $this->deletedPages = array();
 
         // uninstall order must be reverse of install order
         $pagesJSONReversed = array_reverse($this->pagesJSON);
 
         foreach ($pagesJSONReversed as $pageJSON) {
 
-            $p = wire('pages')->get('name=' . $pageJSON->name .',template=' . $pageJSON->template);
+            $p = wire('pages')->get('name=' . $pageJSON->name . ',template=' . $pageJSON->template);
 
             if (isset($p->id) && $p->id) {
                 $url = $p->url();
-                $p->delete();
+                if (!$dryRun) {
+                    $p->delete();
+                }
                 $this->deletedPages[] = $url;
 
             }
         }
     }
 
-    protected function deleteTemplates() {
+    /**
+     * deletes all templates defined in this module, which are not marked as "prefab"
+     *
+     * @param  boolean $dryRun when true, nothing gets deleted
+     * @return void
+     **/
+    protected function deleteTemplates($dryRun = false) {
+
+        // empty array, for running this method more than once
+        $this->deletedTemplates = array();
 
         $templates = wire('templates');
         $fieldgroups = wire('fieldgroups');
@@ -237,15 +311,26 @@ class Module {
             $skip = isset($templateJSON->prefab) && $templateJSON->prefab === true;
 
             if (isset($t) && $t->id && !$skip) {
-                $fg = $t->fieldgroup;
-                $templates->delete($t, true);
-                $fieldgroups->delete($fg, true);
+                if (!$dryRun) {
+                    $fg = $t->fieldgroup;
+                    $templates->delete($t, true);
+                    $fieldgroups->delete($fg, true);
+                }
                 $this->deletedTemplates[] = $templateJSON->name;
             }
         }
     }
 
-    protected function deleteFields() {
+    /**
+     * deletes all fields defined in this module, which are not marked as "prefab"
+     *
+     * @param  boolean $dryRun when true, nothing gets deleted
+     * @return void
+     **/
+    protected function deleteFields($dryRun = false) {
+
+        // empty array, for running this method more than once
+        $this->deletedFields = array();
 
         $fields = wire('fields');
 
@@ -258,13 +343,31 @@ class Module {
             $skip = isset($fieldJSON->prefab) && $fieldJSON->prefab === true;
 
             if (isset($f->id) && $f->id && !$skip) {
-                self::removeFieldFromFieldgroups($f);
-                $fields->delete($f, true);
+                if (!$dryRun) {
+                    self::removeFieldFromFieldgroups($f);
+                    $fields->delete($f, true);
+                }
                 $this->deletedFields[] = $name;
             }
         }
     }
 
+    /**
+     * checks if either of "deletedPages", "deletedTemplates" or "deletedFields"
+     * is not empty after a dry run unistall process
+     *
+     * @param  boolean $forceDryRun it forces the dry run to collect the deleted items,
+     * which is not always necessary if a dry run has been called from outside already
+     * @return boolean
+     **/
+    public function hasDeletableItems($forceDryRun = false) {
+
+        if($forceDryRun) {
+            $this->uninstall($dryRun = true);
+        }
+
+        return !(empty($this->deletedPages) && empty($this->deletedTemplates) && empty($this->deletedFields));
+    }
 
     protected static function removeFieldFromFieldgroups($field) {
 
@@ -288,7 +391,7 @@ class Module {
             // DRY some
             $wire = isset($attr->fuel) ? wire($attr->fuel) : wire('pages');
             $type = isset($attr->type) ? $attr->type : self::PROPERTY_TYPE_DEFAULT;
-            $name = $attr->name;
+            $name = isset($attr->name) ? $attr->name : $attr->field;
             $value = $attr->value;
 
             switch (true) {
@@ -321,9 +424,14 @@ class Module {
      * @return void
      **/
     public function install() {
-        foreach ($this->dependencies as $dependency) {
-            $dependency->install();
+
+        if (isset(self::$installedModules[$this->slug])) {
+            return;
         }
+
+        self::$installedModules[$this->slug] = $this;
+
+        $this->installDependencies();
 
         $this->prepareFields();
 
@@ -357,21 +465,20 @@ class Module {
                 $field->save();
             }
         }
+
     }
 
     /**
-     * Delete everything
+     * Delete everything, but dependecies (modules)
      *
+     * @param  boolean $dryRun if true, it performs a dry run and does not delete anything
      * @return void
-     **/
-    public function uninstall() {
-        // foreach ($this->dependencies as $dependency) {
-        //     $dependency->install();
-        // }
+     */
+    public function uninstall($dryRun = false) {
 
-        $this->deletePages();
-        $this->deleteTemplates();
-        $this->deleteFields();
+        $this->deletePages($dryRun);
+        $this->deleteTemplates($dryRun);
+        $this->deleteFields($dryRun);
 
     }
 

@@ -1,7 +1,8 @@
 <h2><?php echo $headline?></h2>
 
+
 <?php if (!empty($deletedFields)): ?>
-	<h3>Deleted fields</h3>
+	<h3>Fields to be deleted</h3>
 	<ul class="json-installer-list">
 		<?php foreach ($deletedFields as $deletedField): ?>
 
@@ -12,7 +13,7 @@
 <?php endif ?>
 
 <?php if (!empty($deletedTemplates)): ?>
-	<h3>Deleted templates</h3>
+	<h3>Templates to be deleted</h3>
 	<ul class="json-installer-list">
 		<?php foreach ($deletedTemplates as $deletedTemplate): ?>
 
@@ -23,7 +24,7 @@
 <?php endif ?>
 
 <?php if (!empty($deletedPages)): ?>
-	<h3>Deleted pages</h3>
+	<h3>Pages to be deleted</h3>
 	<ul class="json-installer-list">
 		<?php foreach ($deletedPages as $deletedPage): ?>
 
@@ -33,4 +34,7 @@
 	</ul>
 <?php endif ?>
 
+<?php if ($isNotInstalledYet): ?>
+<p>This module does not seem to be installed yet.</p>
 <p><a href="../">Go Back</a></p>
+<?php endif ?>
