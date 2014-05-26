@@ -59,14 +59,15 @@ class ProcessJSONInstaller extends Process {
 
         $headerColumns = array(
             'name',
-            'description',
-            'also installs'
+            'description'
         );
 
         if ($config->advanced) {
+            $headerColumns[] = 'also un-/installs';
             $headerColumns[] = 'install';
             $headerColumns[] = 'uninstall';
         } else {
+            $headerColumns[] = 'also installs';
             $headerColumns[] = 'action';
         }
 
@@ -75,20 +76,20 @@ class ProcessJSONInstaller extends Process {
         $installableModules = $this->jsonLoader->getModules();
 
         foreach ($installableModules as $key => $module) {
-            
+
             $jsonDependencies = array();
             foreach ($module->jsonDependencies as $jsonDependency) {
                 if(isset($jsonDependency->name)) {
                     $jsonDependencies[] = $jsonDependency->name;
                 }
             }
-            
+
             if(count($jsonDependencies) > 0) {
                 $alsoInstalls = implode(', ', $jsonDependencies);
             } else {
                 $alsoInstalls = '';
             }
-            
+
             $contentColumns = array(
                 $module->name,
                 $module->description,
@@ -188,7 +189,7 @@ class ProcessJSONInstaller extends Process {
 
     public function installModule($name) {
         $module = $this->jsonLoader->getModule($name);
-        
+
         if ($module) {
             $module->install();
         } else {
@@ -200,7 +201,7 @@ class ProcessJSONInstaller extends Process {
 
     public function uninstallModule($name) {
         $module = $this->jsonLoader->getModule($name);
-        
+
         if ($module) {
             $module->uninstall();
         } else {
@@ -212,7 +213,7 @@ class ProcessJSONInstaller extends Process {
 
     public function uninstallModuleDry($name) {
         $module = $this->jsonLoader->getModule($name);
-        
+
         if ($module) {
             $module->uninstall($dryRun = true);
         } else {

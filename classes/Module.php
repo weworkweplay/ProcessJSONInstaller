@@ -139,7 +139,7 @@ class Module {
 
         if (isset($json->jsonDependencies)) {
             foreach ($json->jsonDependencies as $jsonDependencyJSON) {
-                
+
                 if ($jsonModule = JSONLoader::loadModule($jsonDependencyJSON)) {
                     // TODO: documentation
                     if ($jsonModule instanceof Module) {
@@ -149,7 +149,7 @@ class Module {
 
             }
         }
-        
+
         $module->fieldsJSON = isset($json->fields) ? $json->fields : array();
         $module->templatesJSON = isset($json->templates) ? $json->templates : array();
         $module->pagesJSON = isset($json->pages) ? $json->pages : array();
@@ -264,7 +264,7 @@ class Module {
             }
         }
     }
-    
+
     /**
      * installs dependencies
      *
@@ -439,7 +439,7 @@ class Module {
             }
         }
     }
-    
+
     /**
      * uninstalls json dependencies
      *
@@ -584,8 +584,8 @@ class Module {
      * @return void
      */
     public function uninstall($dryRun = false) {
-        
-        // TODO: not pretty
+
+        // TODO: not pretty, perhaps merge with new JSONLoader logic
         if ($dryRun) {
             if (isset(self::$dryRunUninstalledModules[$this->slug])) {
                 return;
@@ -603,7 +603,8 @@ class Module {
         $this->deleteFields($dryRun);
         $this->uninstallJsonDependencies($dryRun);
 
-
+        // disabled for now, maybe forever
+        // $this->uninstallDependencies($dryRun);
     }
 
     /**
