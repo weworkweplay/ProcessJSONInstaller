@@ -3,32 +3,55 @@
 namespace JSONInstaller;
 
 class Dependency {
-    public $name;
-    public $zip;
-    public $core = false;
-    public $json = false; // not implemented yet
-    public $skipped = false; // not implemented yet
-    public $force = false; // not implemented yet
 
+    /**
+     * The name of the module, should be equivalent to the modules class name
+     * @var string
+     */
+    public $name;
+
+    /**
+     * The url/path to the zip file of the module
+     * @var string
+     */
+    public $zip;
+
+    /**
+     * Whether it's a core/preexisting module
+     * @var boolean
+     */
+    public $core = false;
+
+    /**
+     * Whether this module was skipped at un-/installation
+     * TODO: not implemented yet
+     * @var boolean
+     */
+    public $skipped = false;
+
+    /**
+     * Whether this module should be installed/downloaaded/unzipped
+     * regardless if it's already installed or not
+     * TODO: not implemented yet
+     * @var boolean
+     */
+    public $force = false;
+
+    /**
+     * The path to where the PW modules reside
+     * TODO: this is weird and unclear
+     * @var string
+     */
     private $installDir = '../modules/';
 
-    public function __construct() {
+    public function __construct() {}
 
-    }
-
+    /**
+     * @return boolean
+     */
     public function install() {
-        $modules = wire('modules');
 
-        if ($this->json && file_exists($this->jsonDir . $this->json)) {
-            $file = $this->jsonDir . $this->json;
-            $json = json_decode(file_get_contents($file));
-            $slug = substr($this->json, 0, -5);
-            $module = Module::createFromJSON($json);
-            $module->slug = $slug;
-            $this->name = $module->name;
-            $module->install();
-            return true;
-        }
+        $modules = wire('modules');
 
         if ($modules->isInstalled($this->name)) {
             return true;
@@ -54,5 +77,35 @@ class Dependency {
         } else {
             return false;
         }
+    }
+
+    /**
+     * @return boolean
+     */
+    public function uninstall() {
+        return false;
+        // disabled PW modules uninstallation for now
+        // $modules = wire('modules');
+        // if ($modules->isInstalled($this->name)) {
+        //     // This is fabulously flaky, because a PW module can be comprised
+        //     // of submodules with different names. Also: if the name in the JSON
+        //     // file is not the exact of the PW module, this also fails.
+        //     $module = $modules->get($this->name);
+        //     try {
+        //         $modules->uninstall($this->name);
+        //         return true;
+        //     } catch (WireException $e) {
+        //         return false;
+        //     }
+        // } else {
+        //     return false;
+        // }
+    }
+
+    /**
+     * @return boolean
+     */
+    public function isInstalled() {
+        return false;
     }
 }

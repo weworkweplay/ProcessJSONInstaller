@@ -1,47 +1,68 @@
 <h2><?php echo $headline?></h2>
 
-<?php if (!empty($installedDependencies)): ?>
-	<h3>Installed dependencies</h3>
-	<ul class="json-installer-list">
-		<?php foreach ($installedDependencies as $installedDependency): ?>
+<?php foreach ($modules as $slug => $module): ?>
 
-			<li><code><?php echo $installedDependency->name?></code></li>
+	<hr class="json-installer-hr">
 
-		<?php endforeach ?>
-	</ul>
-<?php endif ?>
+	<?php if (!empty($module->installedDependencies)): ?>
+		<h3>Installed <em><?php echo $module->name?></em> dependencies</h3>
+		<ul class="json-installer-list">
+			<?php foreach ($module->installedDependencies as $installedDependency): ?>
+				<li><?php echo $installedDependency->name?></li>
+			<?php endforeach ?>
+		</ul>
+	<?php endif ?>
 
-<?php if (!empty($installedFields)): ?>
-	<h3>Created or edited fields</h3>
-	<ul class="json-installer-list">
-		<?php foreach ($installedFields as $installedField): ?>
+	<?php if (!empty($module->fields)): ?>
+		<h3>Created or edited <em><?php echo $module->name?></em> fields</h3>
+		<ul class="json-installer-list">
+			<?php foreach ($module->fields as $installedField): ?>
 
-			<li><code><?php echo $installedField->name?></code> - <?php echo $installedField->label?></li>
+				<li>
+					<code><?php echo $installedField->name?></code>
+					<?php if ($installedField->label): ?>
+						 - <?php echo $installedField->label?>
+					<?php endif ?>
+				</li>
 
-		<?php endforeach ?>
-	</ul>
-<?php endif ?>
+			<?php endforeach ?>
+		</ul>
+	<?php endif ?>
 
-<?php if (!empty($installedTemplates)): ?>
-	<h3>Created or edited templates</h3>
-	<ul class="json-installer-list">
-		<?php foreach ($installedTemplates as $installedTemplate): ?>
+	<?php if (!empty($module->templates)): ?>
+		<h3>Created or edited <em><?php echo $module->name?></em> templates</h3>
+		<ul class="json-installer-list">
+			<?php foreach ($module->templates as $installedTemplate): ?>
 
-			<li><code><?php echo $installedTemplate->name?></code> - <?php echo $installedTemplate->label?></li>
+				<li>
+					<code><?php echo $installedTemplate->name?></code>
+					<?php if ($installedTemplate->label): ?>
+						 - <?php echo $installedTemplate->label?>
+					<?php endif ?>
+				</li>
 
-		<?php endforeach ?>
-	</ul>
-<?php endif ?>
+			<?php endforeach ?>
+		</ul>
+	<?php endif ?>
 
-<?php if (!empty($installedPages)): ?>
-	<h3>Created or edited pages</h3>
-	<ul class="json-installer-list">
-		<?php foreach ($installedPages as $installedPage): ?>
+	<?php if (!empty($module->pages)): ?>
+		<h3>Created or edited <em><?php echo $module->name?></em> pages</h3>
+		<ul class="json-installer-list">
+			<?php foreach ($module->pages as $installedPage): ?>
 
-			<li><code><?php echo $installedPage->url?></code></li>
+				<li>
+					<code><?php echo $installedPage->url?></code>
+					<?php if ($installedPage->title): ?>
+						 - <?php echo $installedPage->title?>
+					<?php endif ?>
+				</li>
 
-		<?php endforeach ?>
-	</ul>
-<?php endif ?>
+			<?php endforeach ?>
+		</ul>
+	<?php endif ?>
+
+<?php endforeach ?>
+
+
 
 <p><a href="../">Go Back</a></p>

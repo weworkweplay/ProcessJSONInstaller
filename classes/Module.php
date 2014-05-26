@@ -8,6 +8,7 @@ use \Field;
 use \FieldGroup;
 use \Template;
 use \Page;
+use \ProcessJSONInstaller;
 
 class Module {
 
@@ -22,6 +23,12 @@ class Module {
     /* Dependencies to install this module */
     public $dependencies;
     public $installedDependencies;
+    public $uninstalledDependencies;
+
+    /* JSON Dependencies to install this module */
+    public $jsonDependencies;
+    public $installedJsonDependencies;
+    public $uninstalledJsonDependencies;
 
     /* Things installing this module will create */
     public $fields;
@@ -52,12 +59,33 @@ class Module {
      * Assoc array to keep track of modules installed in one go.
      * Important when modules reference other modules as dependencies
      * to prevent circular references and to provide complete output for the user
-     * @var assoc array
+     * @var array
      */
     public static $installedModules;
 
+    /**
+     * Assoc array to keep track of modules uninstalled in one go.
+     * Important to provide complete output for the user
+     * @var array
+     */
+    public static $uninstalledModules;
+
+    /**
+     * Assoc array to keep track of modules dry run uninstalled in one go.
+     * Important to provide complete output for the user
+     * @var array
+     */
+    public static $dryRunUninstalledModules;
+
     public function __construct() {
+
         $this->dependencies = array();
+        $this->installedDependencies = array();
+        $this->uninstalledDependencies = array();
+
+        $this->jsonDependencies = array();
+        $this->installedJsonDependencies = array();
+        $this->uninstalledJsonDependencies = array();
 
         $this->fields = array();
         $this->templates = array();
@@ -70,6 +98,16 @@ class Module {
         // only create once for all instances
         if (self::$installedModules === null) {
             self::$installedModules = array();
+        }
+
+        // only create once for all instances
+        if (self::$uninstalledModules === null) {
+            self::$uninstalledModules = array();
+        }
+
+        // only create once for all instances
+        if (self::$dryRunUninstalledModules === null) {
+            self::$dryRunUninstalledModules = array();
         }
     }
 
@@ -88,13 +126,27 @@ class Module {
         if ($json->dependencies) {
             foreach ($json->dependencies as $dependencyJSON) {
                 $d = new Dependency();
-                $d->name = $dependencyJSON->name;
+
                 $d->zip = (isset($dependencyJSON->zip)) ? $dependencyJSON->zip : '';
                 $d->core = (isset($dependencyJSON->core)) ? (bool) $dependencyJSON->core : false;
-                $d->json = (isset($dependencyJSON->json)) ? (bool) $dependencyJSON->json : false;
                 $d->force = (isset($dependencyJSON->force)) ? (bool) $dependencyJSON->force : false;
 
+                $d->name = $dependencyJSON->name;
+
                 $module->dependencies[] = $d;
+            }
+        }
+
+        if (isset($json->jsonDependencies)) {
+            foreach ($json->jsonDependencies as $jsonDependencyJSON) {
+
+                if ($jsonModule = JSONLoader::loadModule($jsonDependencyJSON)) {
+                    // TODO: documentation
+                    if ($jsonModule instanceof Module) {
+                        $module->jsonDependencies[] = JSONLoader::loadModule($jsonDependencyJSON);
+                    }
+                }
+
             }
         }
 
@@ -214,6 +266,19 @@ class Module {
     }
 
     /**
+     * installs dependencies
+     *
+     * @return void
+     */
+    protected function installJsonDependencies() {
+        foreach ($this->jsonDependencies as $jsonDependency) {
+            if ($jsonDependency->install()) {
+                $this->installedJsonDependencies[] = $jsonDependency;
+            }
+        }
+    }
+
+    /**
      * prepares the pages
      *
      * @return void
@@ -285,7 +350,7 @@ class Module {
                 if (!$dryRun) {
                     $p->delete();
                 }
-                $this->deletedPages[] = $url;
+                $this->deletedPages[] = $p;
 
             }
         }
@@ -316,7 +381,7 @@ class Module {
                     $templates->delete($t, true);
                     $fieldgroups->delete($fg, true);
                 }
-                $this->deletedTemplates[] = $templateJSON->name;
+                $this->deletedTemplates[] = $t;
             }
         }
     }
@@ -347,7 +412,43 @@ class Module {
                     self::removeFieldFromFieldgroups($f);
                     $fields->delete($f, true);
                 }
-                $this->deletedFields[] = $name;
+                $this->deletedFields[] = $f;
+            }
+        }
+    }
+
+    /**
+     * uninstall all dependencies defined in this module
+     *
+     * @param  boolean $dryRun when true, nothing gets uninstalled
+     * @return void
+     **/
+    protected function uninstallDependencies($dryRun = false) {
+
+        // empty array, for running this method more than once
+        $this->uninstalledDependencies = array();
+
+        $fields = wire('fields');
+
+        foreach ($this->dependencies as $dependency) {
+            if ($dependency->isInstalled()) {
+                if (!$dryRun) {
+                    $dependency->uninstall();
+                }
+                $this->uninstalledDependencies[] = $dependency;
+            }
+        }
+    }
+
+    /**
+     * uninstalls json dependencies
+     *
+     * @return void
+     */
+    protected function uninstallJsonDependencies($dryRun = false) {
+        foreach ($this->jsonDependencies as $jsonDependency) {
+            if($jsonDependency->hasDeletableItems($forceDryRun = true)) {
+                $jsonDependency->uninstall($dryRun);
             }
         }
     }
@@ -384,7 +485,14 @@ class Module {
         }
     }
 
-
+    /**
+     * Interates through the attributes and assigns their values to the given $page
+     *
+     * @param  array $attributes
+     * @param  Page $page
+     * @param  boolean $hasSelector
+     * @return boolean
+     */
     public static function applyAttributesOrDefaults($attributes, $page, $hasSelector) {
         foreach ($attributes as $attr) {
 
@@ -432,6 +540,7 @@ class Module {
         self::$installedModules[$this->slug] = $this;
 
         $this->installDependencies();
+        $this->installJsonDependencies();
 
         $this->prepareFields();
 
@@ -476,10 +585,26 @@ class Module {
      */
     public function uninstall($dryRun = false) {
 
+        // TODO: not pretty, perhaps merge with new JSONLoader logic
+        if ($dryRun) {
+            if (isset(self::$dryRunUninstalledModules[$this->slug])) {
+                return;
+            }
+            self::$dryRunUninstalledModules[$this->slug] = $this;
+        } else {
+            if (isset(self::$uninstalledModules[$this->slug])) {
+                return;
+            }
+            self::$uninstalledModules[$this->slug] = $this;
+        }
+
         $this->deletePages($dryRun);
         $this->deleteTemplates($dryRun);
         $this->deleteFields($dryRun);
+        $this->uninstallJsonDependencies($dryRun);
 
+        // disabled for now, maybe forever
+        // $this->uninstallDependencies($dryRun);
     }
 
     /**

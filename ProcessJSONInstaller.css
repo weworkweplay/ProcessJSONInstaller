@@ -2,11 +2,18 @@
   list-style: disc;
   padding-left: 1em;
   margin-left: 1em;
-  border-left: 2px solid #ccc;
+  border-left: 2px solid #eee;
   margin-bottom: 2em;
 }
 
 .json-installer-list li {
   margin: 0;
   list-style: disc;
+}
+
+
+.json-installer-hr {
+	border: none;
+	height: 2px;
+	background: #eee;
 }

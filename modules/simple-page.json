@@ -6,14 +6,16 @@
         {
             "name": "AdminTemplateColumns",
             "zip": "https://github.com/Notanotherdotcom/AdminTemplateColumns/zipball/master",
-            "core": false,
-            "force": true
+            "core": false
         },
         {
             "name": "ProcessPageDelete",
             "zip": "https://github.com/NicoKnoll/ProcessPageDelete/zipball/master",
             "core": false
         }
+    ],
+    "jsonDependencies": [
+        "seo.json", "simple-page.json", "sharing.json"
     ],
     "fields": [
         {
