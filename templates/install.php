@@ -5,7 +5,7 @@
 	<hr class="json-installer-hr">
 
 	<?php if (!empty($module->installedDependencies)): ?>
-		<h3>Installed <em><?php echo $module->name?></em> dependencies</h3>
+		<h3><?php echo $dependenciesHeadline ?> <em><?php echo $module->name?></em></h3>
 		<ul class="json-installer-list">
 			<?php foreach ($module->installedDependencies as $installedDependency): ?>
 				<li><?php echo $installedDependency->name?></li>
@@ -14,7 +14,7 @@
 	<?php endif ?>
 
 	<?php if (!empty($module->fields)): ?>
-		<h3>Created or edited <em><?php echo $module->name?></em> fields</h3>
+		<h3><?php echo $fieldsHeadline ?> <em><?php echo $module->name?></em></h3>
 		<ul class="json-installer-list">
 			<?php foreach ($module->fields as $installedField): ?>
 
@@ -30,7 +30,7 @@
 	<?php endif ?>
 
 	<?php if (!empty($module->templates)): ?>
-		<h3>Created or edited <em><?php echo $module->name?></em> templates</h3>
+		<h3><?php echo $templatesHeadline ?> <em><?php echo $module->name?></em></h3>
 		<ul class="json-installer-list">
 			<?php foreach ($module->templates as $installedTemplate): ?>
 
@@ -46,7 +46,7 @@
 	<?php endif ?>
 
 	<?php if (!empty($module->pages)): ?>
-		<h3>Created or edited <em><?php echo $module->name?></em> pages</h3>
+		<h3><?php echo $pagesHeadline ?> <em><?php echo $module->name?></em></h3>
 		<ul class="json-installer-list">
 			<?php foreach ($module->pages as $installedPage): ?>
 
