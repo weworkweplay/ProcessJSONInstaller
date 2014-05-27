@@ -8,7 +8,6 @@ use \Field;
 use \FieldGroup;
 use \Template;
 use \Page;
-use \ProcessJSONInstaller;
 
 class Module {
 
@@ -162,7 +161,7 @@ class Module {
      *
      * @return void
      */
-    protected function prepareTemplates() {
+    protected function installTemplates() {
         foreach ($this->templatesJSON as $templateJSON) {
             $t = wire('templates')->get($templateJSON->name);
             $attributes = (!empty($templateJSON->attributes)) ? $templateJSON->attributes : array();
@@ -201,11 +200,7 @@ class Module {
             // apply attributes and determine if selectors are used
             $hasSelector = self::applyAttributesOrDefaults($attributes, $t, $hasSelector);
 
-            // only save if selector is present
-            // see description in preparePages()
-            if ($hasSelector) {
-                $t->save();
-            }
+            $t->save();
 
             $this->templates[] = $t;
         }
@@ -216,7 +211,7 @@ class Module {
      *
      * @return void
      */
-    protected function prepareFields() {
+    protected function installFields() {
         foreach ($this->fieldsJSON as $fieldJSON) {
             $name = (!empty($this->prefix) && $fieldJSON->name[0] !== '~') ? $this->prefix . '_' . $fieldJSON->name : $fieldJSON->name;
             $label = (!empty($fieldJSON->label)) ? $fieldJSON->label : '';
@@ -242,11 +237,7 @@ class Module {
                 $this->fieldsHaveSelectors = true;
             }
 
-            // only save if selector is present
-            // see description in preparePages()
-            if ($hasSelector) {
-                $f->save();
-            }
+            $f->save();
 
             $this->fields[] = $f;
         }
@@ -283,7 +274,8 @@ class Module {
      *
      * @return void
      */
-    protected function preparePages() {
+    protected function installPages() {
+
         foreach ($this->pagesJSON as $pageJSON) {
             $p = wire('pages')->get('name=' . $pageJSON->name . ',template=' . $pageJSON->template);
             $attributes = (!empty($pageJSON->attributes)) ? $pageJSON->attributes : array();
@@ -295,7 +287,6 @@ class Module {
                 $p->name = $pageJSON->name;
 
                 $p->parent = (isset($pageJSON->parent)) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
-
                 $p->template = $pageJSON->template;
 
                 // If set to true, Page:statusHidden, else, Page::statusOn
@@ -315,15 +306,8 @@ class Module {
             // apply attributes and determine if selectors are used
             $hasSelector = self::applyAttributesOrDefaults($attributes, $p, $hasSelector);
 
-            // only save if selector is present
-            // saving is necessary if pages in the same loop are referencing
-            // each other via selector, since selecting a not yet
-            // existing/saved page would not work
-            if ($hasSelector) {
-                $p->save();
-            }
+            $p->save();
 
-            $this->pages[] = $p;
         }
     }
 
@@ -542,37 +526,23 @@ class Module {
         $this->installDependencies();
         $this->installJsonDependencies();
 
-        $this->prepareFields();
-
-        foreach ($this->fields as $field) {
-            $field->save();
-        }
+        $this->installFields();
 
         // By first creating the fields, the script allows to specify new fields
         // and use them in a new template in the same JSON file
-        $this->prepareTemplates();
-
-        foreach ($this->templates as $template) {
-            $template->save();
-        }
+        $this->installTemplates();
 
         // By first creating the templates and fields,
         // you can use a new template with new fields in a new page
         // from the same JSON
-        $this->preparePages();
+        $this->installPages();
 
-        foreach ($this->pages as $page) {
-            $page->save();
-        }
 
         // rerun field installation, because they may
         // reference pages via selector that are created afterwards
         // for example: for page fields
         if ($this->fieldsHaveSelectors) {
-            $this->prepareFields();
-            foreach ($this->fields as $field) {
-                $field->save();
-            }
+            $this->installFields();
         }
 
     }
