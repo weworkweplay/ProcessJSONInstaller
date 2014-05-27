@@ -304,6 +304,8 @@ class ProcessJSONInstaller extends Process {
                 'pagesHeadline'        => I18N::get('Pages deleted of'),
                 'notInstalledHeadline' => I18N::get('not installed, skipping'),
 
+                'notInstalledMessage'  => I18N::get('This module does not seem to be installed yet.'),
+
                 'headline' => $headline,
                 'modules' => Module::$uninstalledModules
             ));
@@ -344,6 +346,8 @@ class ProcessJSONInstaller extends Process {
             'templatesHeadline'    => I18N::get('Templates to be deleted of'),
             'pagesHeadline'        => I18N::get('Pages to be deleted of'),
             'notInstalledHeadline' => I18N::get('not installed, skipping'),
+
+            'notInstalledMessage'  => I18N::get('This module does not seem to be installed yet.'),
 
             'headline' => $headline,
             'modules' => Module::$dryRunUninstalledModules,

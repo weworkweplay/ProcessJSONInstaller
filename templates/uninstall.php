@@ -83,6 +83,6 @@
 
 
 <?php if (isset($isNotInstalledYet) && $isNotInstalledYet): ?>
-<p>This module does not seem to be installed yet.</p>
+<p><?php echo $notInstalledMessage?></p>
 <?php endif ?>
 <p><a href="../">Go Back</a></p>
