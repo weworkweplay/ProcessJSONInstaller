@@ -203,23 +203,11 @@ class ProcessJSONInstaller extends Process {
         return $module;
     }
 
-    public function uninstallModule($name) {
+    public function uninstallModule($name, $dryRun = false) {
         $module = $this->jsonLoader->getModule($name);
 
         if ($module) {
-            $module->uninstall();
-        } else {
-            throw new WireException('Uninstall: module ' . $name . ' does not exist.');
-        }
-
-        return $module;
-    }
-
-    public function uninstallModuleDry($name) {
-        $module = $this->jsonLoader->getModule($name);
-
-        if ($module) {
-            $module->uninstall($dryRun = true);
+            $module->uninstall($dryRun);
         } else {
             throw new WireException('Uninstall: module ' . $name . ' does not exist.');
         }
@@ -235,7 +223,7 @@ class ProcessJSONInstaller extends Process {
             $module = $this->installModule($this->input->urlSegment(2));
         } catch (WireException $e) {
             $this->error($e->getMessage());
-            return "";
+            return '';
         }
 
         $this->message('Succesfully installed or updated ' . $module->name);
@@ -253,14 +241,12 @@ class ProcessJSONInstaller extends Process {
         ));
 
         return $outputTemplate->render();
-
     }
 
     /**
      * Called when the URL is this module's page URL + "/uninstall/?:name/"
      */
     public function ___executeUninstall() {
-
         $name = $this->input->urlSegment(2);
         $confirm = $this->input->urlSegment(3);
 
@@ -290,19 +276,17 @@ class ProcessJSONInstaller extends Process {
         }
 
         return $outputTemplate->render();
-
     }
 
     /**
      * Called when the URL is this module's page URL + "/confirmuninstall/?:name/"
      */
     protected function ___confirmUninstall() {
-
         $this->breadcrumbs->add(new Breadcrumb($this->url, self::$moduleInfo['title']));
 
         $name = $this->input->urlSegment(2);
 
-        $module = $this->uninstallModuleDry($name);
+        $module = $this->uninstallModule($name, $dryRun = true);
 
         $headline = 'Confirm uninstallation of ' . $module->name;
         $isNotInstalledYet = !$module->hasDeletableItems($forceDryRun = false);
