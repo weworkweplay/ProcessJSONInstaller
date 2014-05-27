@@ -3,17 +3,21 @@
 namespace JSONInstaller;
 
 require_once 'Dependency.php';
+require_once 'SkippedItem.php';
 
 use \Field;
 use \FieldGroup;
 use \Template;
 use \Page;
+use \NullPage;
 
 class Module {
 
     const PROPERTY_TYPE_SELECTOR = 'selector';
     const PROPERTY_TYPE_SELECTOR_ID = 'selector_id';
     const PROPERTY_TYPE_DEFAULT = 'default';
+    const EMPTY_JSON_PARENT = '"EMPTY PARENT"';
+    const EMPTY_JSON_TEMPLATE = '"EMPTY TEMPLATE"';
 
     public $name;
     public $description;
@@ -39,7 +43,12 @@ class Module {
     public $deletedTemplates;
     public $deletedPages;
 
+    /* Things un-/installing this module will skip due to various reasons */
+    public $skippedItems;
+
     public $fieldsHaveSelectors = false;
+    public $templatesHaveSelectors = false;
+    public $pagesHaveSelectors = false;
 
     /* Storing unparsed objects until we want to install */
     public $fieldsJSON;
@@ -93,6 +102,8 @@ class Module {
         $this->deletedFields = array();
         $this->deletedTemplates = array();
         $this->deletedPages = array();
+
+        $this->skippedItems = array();
 
         // only create once for all instances
         if (self::$installedModules === null) {
@@ -157,11 +168,15 @@ class Module {
     }
 
     /**
-     * prepares the templates
+     * prepare the templates
      *
      * @return void
      */
     protected function installTemplates() {
+
+        // empty array, for running this method more than once
+        $this->templates = array();
+
         foreach ($this->templatesJSON as $templateJSON) {
             $t = wire('templates')->get($templateJSON->name);
             $attributes = (!empty($templateJSON->attributes)) ? $templateJSON->attributes : array();
@@ -199,6 +214,9 @@ class Module {
 
             // apply attributes and determine if selectors are used
             $hasSelector = self::applyAttributesOrDefaults($attributes, $t, $hasSelector);
+            if ($hasSelector) {
+                $this->templatesHaveSelectors = true;
+            }
 
             $t->save();
 
@@ -207,11 +225,15 @@ class Module {
     }
 
     /**
-     * prepares the fields
+     * prepare the fields
      *
      * @return void
      */
     protected function installFields() {
+
+        // empty array, for running this method more than once
+        $this->fields = array();
+
         foreach ($this->fieldsJSON as $fieldJSON) {
             $name = (!empty($this->prefix) && $fieldJSON->name[0] !== '~') ? $this->prefix . '_' . $fieldJSON->name : $fieldJSON->name;
             $label = (!empty($fieldJSON->label)) ? $fieldJSON->label : '';
@@ -244,7 +266,7 @@ class Module {
     }
 
     /**
-     * installs dependencies
+     * install dependencies
      *
      * @return void
      */
@@ -257,7 +279,7 @@ class Module {
     }
 
     /**
-     * installs dependencies
+     * install dependencies
      *
      * @return void
      */
@@ -270,13 +292,21 @@ class Module {
     }
 
     /**
-     * prepares the pages
+     * prepare the pages
      *
      * @return void
      */
     protected function installPages() {
 
+        // empty array, for running this method more than once
+        $this->pages = array();
+
+        $templates = wire('templates');
+
         foreach ($this->pagesJSON as $pageJSON) {
+
+            $skipped = false;
+
             $p = wire('pages')->get('name=' . $pageJSON->name . ',template=' . $pageJSON->template);
             $attributes = (!empty($pageJSON->attributes)) ? $pageJSON->attributes : array();
             $defaults = (!empty($pageJSON->defaults)) ? $pageJSON->defaults : array();
@@ -284,11 +314,14 @@ class Module {
 
             if (!$p->id) {
                 $p = new Page();
-                $p->name = $pageJSON->name;
+            }
 
-                $p->parent = (isset($pageJSON->parent)) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
+            $p->name = $pageJSON->name;
+
+            $p->parent = (isset($pageJSON->parent)) ? wire('pages')->get('/' . $pageJSON->parent . '/') : wire('pages')->get('/');
+
+            if ($templates->get($pageJSON->template)) {
                 $p->template = $pageJSON->template;
-
                 // If set to true, Page:statusHidden, else, Page::statusOn
                 $hidden = isset($pageJSON->hidden) ? ((bool) $pageJSON->hidden ? Page::statusHidden : Page::statusOn) : Page::statusOn;
 
@@ -301,24 +334,52 @@ class Module {
                 // apply defaults and determine if selectors are used
                 $hasSelector = self::applyAttributesOrDefaults($defaults, $p, $hasSelector);
 
+                // apply attributes and determine if selectors are used
+                $hasSelector = self::applyAttributesOrDefaults($attributes, $p, $hasSelector);
+                if ($hasSelector) {
+                    $this->pagesHaveSelectors = true;
+                }
+            } else {
+                $altTemplate = isset($pageJSON->template) ? $pageJSON->template : self::EMPTY_JSON_TEMPLATE;
+                $this->skippedItems[] = new SkippedItem(
+                    $pageJSON->name,
+                    SkippedItem::TYPE_PAGE,
+                    $reason = 'Template "' . $altTemplate . '" does not exist',
+                    SkippedItem::PROCESS_INSTALL,
+                    $this
+                );
+                $skipped = true;
             }
 
-            // apply attributes and determine if selectors are used
-            $hasSelector = self::applyAttributesOrDefaults($attributes, $p, $hasSelector);
 
-            $p->save();
+            if ($p->parent instanceof NullPage) {
+                $altParent = isset($pageJSON->parent) ? $pageJSON->parent : self::EMPTY_JSON_PARENT;
+                $this->skippedItems[] = new SkippedItem(
+                    $pageJSON->name,
+                    SkippedItem::TYPE_PAGE,
+                    $reason = 'Parent "' . $altParent . '" does not exist',
+                    SkippedItem::PROCESS_INSTALL,
+                    $this
+                );
+                $skipped = true;
+            }
+
+            if (!$skipped) {
+                $p->save();
+                $this->pages[] = $p;
+            }
 
         }
     }
 
     /**
-     * deletes all pages defined in this module, which are not marked as "prefab"
+     * delete all pages defined in this module, which are not marked as "prefab"
      *
      * @param  boolean $dryRun when true, nothing gets deleted
      * @return void
      **/
     protected function deletePages($dryRun = false) {
-
+        $pages = wire('pages');
         // empty array, for running this method more than once
         $this->deletedPages = array();
 
@@ -330,18 +391,30 @@ class Module {
             $p = wire('pages')->get('name=' . $pageJSON->name . ',template=' . $pageJSON->template);
 
             if (isset($p->id) && $p->id) {
-                $url = $p->url();
-                if (!$dryRun) {
-                    $p->delete();
-                }
-                $this->deletedPages[] = $p;
+                $this->addPageAndAllChildrenToDeletedPages($p);
 
+                if (!$dryRun) {
+                    $pages->delete($p, $recursive = true);
+                }
             }
         }
     }
 
     /**
-     * deletes all templates defined in this module, which are not marked as "prefab"
+     * add given page and all children to $this->deletedPages recursively
+     * @param Page $page
+     */
+    protected function addPageAndAllChildrenToDeletedPages($page) {
+        if (!in_array($page, $this->deletedPages)) {
+            $this->deletedPages[] = $page;
+        }
+        foreach ($page->children as $child) {
+            $this->addPageAndAllChildrenToDeletedPages($child);
+        }
+    }
+
+    /**
+     * delete all templates defined in this module, which are not marked as "prefab"
      *
      * @param  boolean $dryRun when true, nothing gets deleted
      * @return void
@@ -371,7 +444,7 @@ class Module {
     }
 
     /**
-     * deletes all fields defined in this module, which are not marked as "prefab"
+     * delete all fields defined in this module, which are not marked as "prefab"
      *
      * @param  boolean $dryRun when true, nothing gets deleted
      * @return void
@@ -425,13 +498,13 @@ class Module {
     }
 
     /**
-     * uninstalls json dependencies
+     * uninstall json dependencies
      *
      * @return void
      */
     protected function uninstallJsonDependencies($dryRun = false) {
         foreach ($this->jsonDependencies as $jsonDependency) {
-            if($jsonDependency->hasDeletableItems($forceDryRun = true)) {
+            if ($jsonDependency->hasDeletableItems($forceDryRun = true)) {
                 $jsonDependency->uninstall($dryRun);
             }
         }
@@ -447,7 +520,7 @@ class Module {
      **/
     public function hasDeletableItems($forceDryRun = false) {
 
-        if($forceDryRun) {
+        if ($forceDryRun) {
             $this->uninstall($dryRun = true);
         }
 
@@ -470,7 +543,7 @@ class Module {
     }
 
     /**
-     * Interates through the attributes and assigns their values to the given $page
+     * Interate through the attributes and assigns their values to the given $page
      *
      * @param  array $attributes
      * @param  Page $page
@@ -517,34 +590,56 @@ class Module {
      **/
     public function install() {
 
+        // install only if not installed already
         if (isset(self::$installedModules[$this->slug])) {
             return;
         }
-
         self::$installedModules[$this->slug] = $this;
+
+        // if install is run more than once, skippedItems should be emptied
+        $this->skippedItems = array();
 
         $this->installDependencies();
         $this->installJsonDependencies();
 
         $this->installFields();
-
-        // By first creating the fields, the script allows to specify new fields
-        // and use them in a new template in the same JSON file
         $this->installTemplates();
-
-        // By first creating the templates and fields,
-        // you can use a new template with new fields in a new page
-        // from the same JSON
         $this->installPages();
 
+        // run instalation again if necessary
+        if ($this->moduleHasSelectors()) {
+            // if install is run more than once, skippedItems should be emptied
+            // because skipped items may not be valid anymore
+            $this->skippedItems = array();
+        }
 
-        // rerun field installation, because they may
-        // reference pages via selector that are created afterwards
+        // rerun template installation, because they may reference
+        // items via selector that are created afterwards
         // for example: for page fields
         if ($this->fieldsHaveSelectors) {
             $this->installFields();
         }
 
+        // rerun template installation, because they may reference
+        // items via selector that are created afterwards
+        if ($this->templatesHaveSelectors) {
+            $this->installTemplates();
+        }
+
+        // rerun template installation, because they may reference
+        // items via selector that are created afterwards
+        if ($this->pagesHaveSelectors) {
+            $this->installPages();
+        }
+
+    }
+
+    /**
+     * determine if any of the fields, templates or pages have selectors
+     * @return boolean
+     */
+    protected function moduleHasSelectors() {
+        return ($this->fieldsHaveSelectors || $this->templatesHaveSelectors || $this->pagesHaveSelectors);
     }
 
     /**
@@ -588,5 +683,19 @@ class Module {
         }
 
         $template->fields->save();
+    }
+
+    /**
+     * globally accessible for outputting a list of all skipped item
+     * @return array all skipped items of all modules
+     */
+    public static function getAllSkippedItems() {
+        $skippedItems = array();
+        foreach (self::$installedModules as $module) {
+            foreach ($module->skippedItems as $skippedItem) {
+                $skippedItems[] = $skippedItem;
+            }
+        }
+        return $skippedItems;
     }
 }

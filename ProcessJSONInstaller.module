@@ -35,6 +35,7 @@ class ProcessJSONInstaller extends Process {
 
     const pageName = 'json-installer';
     const confirmParam = 'confirm';
+    const emptyModuleName = '"EMPTY MODULE NAME"';
 
     /**
      * Array containing all installable modules
@@ -155,6 +156,10 @@ class ProcessJSONInstaller extends Process {
     }
 
     public function ___executeExport() {
+
+        $this->breadcrumbs->add(new Breadcrumb($this->url, self::$moduleInfo['title']));
+        $this->fuel->set('processHeadline', 'Export');
+
         $export = $this->modules->get('ProcessExportProfile');
 
         if (!$export) {
@@ -194,10 +199,22 @@ class ProcessJSONInstaller extends Process {
 
         $module = $this->jsonLoader->getModule($name);
 
+        $altName = $name ? $name : self::emptyModuleName;
+
         if ($module) {
             $module->install();
         } else {
-            throw new WireException('Install: module ' . $name . ' does not exist.');
+            throw new WireException('Module ' . $altName . ' does not exist.');
+        }
+
+        $module = $this->jsonLoader->getModule($name);
+
+        $altName = $name ? $name : self::emptyModuleName;
+
+        if ($module) {
+            $module->install();
+        } else {
+            throw new WireException('Module ' . $altName . ' does not exist.');
         }
 
         return $module;
@@ -206,10 +223,12 @@ class ProcessJSONInstaller extends Process {
     public function uninstallModule($name, $dryRun = false) {
         $module = $this->jsonLoader->getModule($name);
 
+        $altName = $name ? $name : self::emptyModuleName;
+
         if ($module) {
             $module->uninstall($dryRun);
         } else {
-            throw new WireException('Uninstall: module ' . $name . ' does not exist.');
+            throw new WireException('Module ' . $altName . ' does not exist.');
         }
 
         return $module;
@@ -223,10 +242,15 @@ class ProcessJSONInstaller extends Process {
             $module = $this->installModule($this->input->urlSegment(2));
         } catch (WireException $e) {
             $this->error($e->getMessage());
-            return '';
+            return $this->failOutput();
         }
 
         $this->message('Succesfully installed or updated ' . $module->name);
+
+        $skippedItems = JSONInstaller\Module::getAllSkippedItems();
+        if ($skippedItems) {
+            $this->error('Some items were skipped');
+        }
 
         $headline = 'Installed ' . $module->name;
 
@@ -237,6 +261,7 @@ class ProcessJSONInstaller extends Process {
         $outputTemplate= self::getTemplate('install');
         $outputTemplate->setArray(array(
             'headline' => $headline,
+            'skippedItems' => $skippedItems,
             'modules' => JSONInstaller\Module::$installedModules
         ));
 
@@ -254,18 +279,14 @@ class ProcessJSONInstaller extends Process {
             return $this->confirmUninstall();
         }
 
-        $this->breadcrumbs->add(new Breadcrumb($this->url, self::$moduleInfo['title']));
-
-        $outputTemplate= self::getTemplate('uninstall');
-
         try {
+            $this->breadcrumbs->add(new Breadcrumb($this->url, self::$moduleInfo['title']));
 
             $module = $this->uninstallModule($this->input->urlSegment(2));
-
             $headline = 'Uninstalled ' . $module->name;
-
             $this->fuel->set('processHeadline', $headline);
 
+            $outputTemplate= self::getTemplate('uninstall');
             $outputTemplate->setArray(array(
                 'headline' => $headline,
                 'modules' => JSONInstaller\Module::$uninstalledModules
@@ -273,6 +294,7 @@ class ProcessJSONInstaller extends Process {
 
         } catch (WireException $e) {
             $this->error($e->getMessage());
+            return $this->failOutput();
         }
 
         return $outputTemplate->render();
@@ -317,6 +339,15 @@ class ProcessJSONInstaller extends Process {
         }
 
         return $out;
+    }
+
+    public function ___failOutput() {
+        $outputTemplate = self::getTemplate('fail');
+        $this->fuel->set('processHeadline', 'Fail');
+        $outputTemplate->setArray(array(
+            'headline' => 'Whoops! Something went wrong'
+        ));
+        return $outputTemplate->render();
     }
 
     public function ___install() {

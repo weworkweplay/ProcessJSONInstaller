@@ -1,0 +1,96 @@
+{
+    "name": "Selector tests",
+    "description": "Contains some data for testing selectors in JSON files",
+    "prefix": "uc",
+    "dependencies": [],
+    "fields": [],
+    "templates": [],
+    "pages": [
+        {
+            "name": "selector-test-page-1",
+            "template": "nonexisting-template-name-1",
+            "parent": "nonexisting-parent-1",
+            "defaults": [
+                {
+                    "field": "title",
+                    "value": "Selector Test Page 1"
+                }
+            ]
+
+        },
+        {
+            "name": "selector-test-page-3",
+            "template": "basic-page",
+            "defaults": [
+                {
+                    "field": "title",
+                    "value": "Selector Test Page 3"
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "parent",
+                    "type": "selector",
+                    "value": "name=selector-test-page-2"
+                }
+            ]
+
+        },
+        {
+            "name": "selector-test-page-5",
+            "template": "basic-page",
+            "defaults": [
+                {
+                    "field": "title",
+                    "value": "Selector Test Page 5"
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "parent",
+                    "type": "selector",
+                    "value": "name=selector-test-page-6"
+                }
+            ]
+
+        },
+        {
+            "name": "selector-test-page-6",
+            "template": "basic-page",
+            "defaults": [
+                {
+                    "field": "title",
+                    "value": "Selector Test Page 6"
+                }
+            ],
+            "attributes": [
+                {
+                    "name": "parent",
+                    "type": "selector",
+                    "value": "name=selector-test-page-3"
+                }
+            ]
+
+        },
+        {
+            "name": "selector-test-page-2",
+            "template": "basic-page",
+            "defaults": [
+                {
+                    "field": "title",
+                    "value": "Basic Page 2"
+                }
+            ]
+        },
+        {
+            "name": "selector-test-page-4",
+            "template": "basic-page",
+            "defaults": [
+                {
+                    "field": "title",
+                    "value": "Basic Page 4"
+                }
+            ]
+        }
+    ]
+}
