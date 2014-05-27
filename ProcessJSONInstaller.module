@@ -188,6 +188,10 @@ class ProcessJSONInstaller extends Process {
     }
 
     public function installModule($name) {
+        if (!$this->jsonLoader) {
+            $this->jsonLoader = JSONInstaller\JSONLoader::create();
+        }
+
         $module = $this->jsonLoader->getModule($name);
 
         if ($module) {
