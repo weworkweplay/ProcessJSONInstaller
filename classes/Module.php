@@ -344,7 +344,7 @@ class Module {
                 $this->skippedItems[] = new SkippedItem(
                     $pageJSON->name,
                     SkippedItem::TYPE_PAGE,
-                    $reason = I18N::get('Template %s does not exist', $altTemplate),
+                    $reason = sprintf('Template %s does not exist', $altTemplate),
                     SkippedItem::PROCESS_INSTALL,
                     $this
                 );
@@ -357,7 +357,7 @@ class Module {
                 $this->skippedItems[] = new SkippedItem(
                     $pageJSON->name,
                     SkippedItem::TYPE_PAGE,
-                    $reason = I18N::get('Template %s does not exist', $altParent),
+                    $reason = sprintf('Template %s does not exist', $altParent),
                     SkippedItem::PROCESS_INSTALL,
                     $this
                 );
