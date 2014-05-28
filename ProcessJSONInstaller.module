@@ -29,11 +29,11 @@ class ProcessJSONInstaller extends Process {
 
     public static function getModuleInfo() {
         return array(
-            'title' => 'JSON Installer',
-            'summary' => 'Run JSON files to create fields, templates and pages and install Plugin Modules',
-            'version' => 30,
-            'author' => 'Pieter Beulque',
-            'permission' => 'page-edit',
+            'title'      => 'JSON Installer',
+            'summary'    => 'Run JSON files to create fields, templates and pages and install Plugin Modules',
+            'version'    => 30,
+            'author'     => 'Pieter Beulque',
+            'permission' => 'page-edit'
         );
     }
 
@@ -119,7 +119,6 @@ class ProcessJSONInstaller extends Process {
             $table->row($contentColumns);
         }
 
-        // $actionName = ;
         $table->action(array('Export site' => $this->url . 'export/'));
 
         $out = $table->render();
@@ -296,7 +295,7 @@ class ProcessJSONInstaller extends Process {
 
             $outputTemplate= self::getTemplate('uninstall');
             $outputTemplate->setArray(array(
-                'dependenciesHeadline'       => 'Dependencies deleted of',
+                'dependenciesHeadline' => 'Dependencies deleted of',
                 'fieldsHeadline'       => 'Fields deleted of',
                 'templatesHeadline'    => 'Templates deleted of',
                 'pagesHeadline'        => 'Pages deleted of',
@@ -304,8 +303,8 @@ class ProcessJSONInstaller extends Process {
 
                 'notInstalledMessage'  => 'This module does not seem to be installed yet.',
 
-                'headline' => $headline,
-                'modules' => Module::$uninstalledModules
+                'headline'             => $headline,
+                'modules'              => Module::$uninstalledModules
             ));
 
         } catch (WireException $e) {
@@ -339,7 +338,7 @@ class ProcessJSONInstaller extends Process {
 
         $outputTemplate= self::getTemplate('uninstall');
         $outputTemplate->setArray(array(
-            'dependenciesHeadline'       => 'Dependencies to be deleted of',
+            'dependenciesHeadline' => 'Dependencies to be deleted of',
             'fieldsHeadline'       => 'Fields to be deleted of',
             'templatesHeadline'    => 'Templates to be deleted of',
             'pagesHeadline'        => 'Pages to be deleted of',
@@ -347,9 +346,9 @@ class ProcessJSONInstaller extends Process {
 
             'notInstalledMessage'  => 'This module does not seem to be installed yet.',
 
-            'headline' => $headline,
-            'modules' => Module::$dryRunUninstalledModules,
-            'isNotInstalledYet' => $isNotInstalledYet
+            'headline'             => $headline,
+            'modules'              => Module::$dryRunUninstalledModules,
+            'isNotInstalledYet'    => $isNotInstalledYet
         ));
 
         $out = $outputTemplate->render();
