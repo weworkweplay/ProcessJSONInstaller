@@ -3,6 +3,9 @@
     "description": "Adds a switch to show 'Under Construction' to visitors",
     "prefix": "uc",
     "dependencies": [],
+    "jsonDependencies": [
+        "config.json"
+    ],
     "fields": [
         {
             "name": "~is_live",

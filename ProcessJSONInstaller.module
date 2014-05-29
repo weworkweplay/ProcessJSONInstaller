@@ -384,7 +384,7 @@ class ProcessJSONInstaller extends Process {
 
         $this->message(sprintf('Created page: %s', $page->path));
 
-        $this->installModule('config');
+        // $this->installModule('config'); // diabled for now due to https://github.com/weworkweplay/ProcessJSONInstaller/issues/18
         $this->message('Ran config installation script');
     }
 

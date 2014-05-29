@@ -9,6 +9,9 @@
             "core": false
         }
     ],
+    "jsonDependencies": [
+        "config.json"
+    ],
     "fields": [
         {
             "name": "name",
